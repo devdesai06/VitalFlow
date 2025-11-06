@@ -2,69 +2,164 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const db = require('./db');
+const db = require('./db'); // make sure this exports your MySQL connection
 
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
+// 1️⃣ All Donors
+app.get("/donors", (req, res) => {
+  db.query("SELECT * FROM Donor", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
 
-// 🩸 Route to add a donor
-app.post('/add-donor', (req, res) => {
-  const { name, age, phone, state, district, blood_group, blood_component } = req.body;
+// 2️⃣ Hospitals List
+app.get("/hospitals", (req, res) => {
+  db.query("SELECT Hospital_Name, Contact_No, Email, Address FROM Hospital", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
 
-  if (!name || !age || !phone || !state || !district || !blood_group || !blood_component) {
-    return res.status(400).json({ error: 'All fields are required' });
-  }
+// 3️⃣ Blood Donations
+app.get("/donations", (req, res) => {
+  db.query("SELECT Donation_ID, Donor_ID, BloodType_ID, Quantity_ml, Status, Donation_Date FROM Blood_Donation", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
 
+// 4️⃣ Donors with Blood Group O+
+app.get("/donors/o-positive", (req, res) => {
+  db.query("SELECT Name, Contact_No, BloodGroup FROM Donor WHERE BloodGroup = 'O+'", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 5️⃣ Donations between 2023 and 2024
+app.get("/donations/2023-2024", (req, res) => {
+  db.query("SELECT * FROM Blood_Donation WHERE Donation_Date BETWEEN '2023-01-01' AND '2024-12-31'", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 6️⃣ Hospitals in Ahmedabad
+app.get("/hospitals/ahmedabad", (req, res) => {
+  db.query("SELECT * FROM Hospital WHERE Address LIKE '%Ahmedabad%'", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 7️⃣ Donor & Blood Type Join
+app.get("/join/donor-donation", (req, res) => {
   const sql = `
-    INSERT INTO donors (name, age, phone, state, district, blood_group, blood_component)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    SELECT d.Name AS Donor_Name, bt.BloodGroup, bd.Quantity_ml, bd.Status
+    FROM Donor d
+    JOIN Blood_Donation bd ON d.Donor_ID = bd.Donor_ID
+    JOIN Blood_Type bt ON bd.BloodType_ID = bt.BloodType_ID;
   `;
-
-  db.query(sql, [name, age, phone, state, district, blood_group, blood_component], (err, result) => {
-    if (err) {
-      console.error('❌ Error inserting donor:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json({ message: '✅ Donor registered successfully!' });
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
   });
 });
 
-// 🩸 Route to search donors
-app.post('/search-donors', (req, res) => {
-  const { state, district, blood_group, blood_component } = req.body;
-
-  let query = 'SELECT * FROM donors WHERE 1=1';
-  const params = [];
-
-  if (state && state !== 'Select State') {
-    query += ' AND state = ?';
-    params.push(state);
-  }
-  if (district && district !== 'Select District') {
-    query += ' AND district = ?';
-    params.push(district);
-  }
-  if (blood_group && blood_group !== 'Select Blood Group') {
-    query += ' AND blood_group = ?';
-    params.push(blood_group);
-  }
-  if (blood_component && blood_component !== 'Select Blood Component') {
-    query += ' AND blood_component = ?';
-    params.push(blood_component);
-  }
-
-  db.query(query, params, (err, results) => {
-    if (err) {
-      console.error('❌ Error searching donors:', err);
-      return res.status(500).json({ error: 'Database error' });
-    }
-    res.json({ donors: results });
+// 8️⃣ Hospital Requests Join
+app.get("/join/hospital-requests", (req, res) => {
+  const sql = `
+    SELECT h.Hospital_Name, bt.BloodGroup, br.Requested_Units, br.Status
+    FROM Blood_Request br
+    JOIN Hospital h ON br.Hospital_ID = h.Hospital_ID
+    JOIN Blood_Type bt ON br.BloodType_ID = bt.BloodType_ID;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
   });
 });
 
-// Start Server
+// 9️⃣ Blood Distributions Join
+app.get("/join/distributions", (req, res) => {
+  const sql = `
+    SELECT bd.Distribution_ID, h.Hospital_Name, bi.Quantity_Units, bd.Status
+    FROM Blood_Distribution bd
+    JOIN Blood_Request br ON bd.Request_ID = br.Request_ID
+    JOIN Hospital h ON br.Hospital_ID = h.Hospital_ID
+    JOIN Blood_Inventory bi ON bd.Inventory_ID = bi.Inventory_ID;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 🔟 Donor Count by Blood Group
+app.get("/stats/donor-count", (req, res) => {
+  const sql = `
+    SELECT BloodGroup, COUNT(*) AS Total_Donors
+    FROM Donor
+    GROUP BY BloodGroup;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 11️⃣ Blood Inventory Levels
+app.get("/stats/inventory", (req, res) => {
+  const sql = `
+    SELECT bt.BloodGroup, SUM(bi.Quantity_Units) AS Total_Units
+    FROM Blood_Inventory bi
+    JOIN Blood_Type bt ON bi.BloodType_ID = bt.BloodType_ID
+    GROUP BY bt.BloodGroup;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 12️⃣ Campaign Performance
+app.get("/stats/campaigns", (req, res) => {
+  db.query("SELECT Campaign_Name, Collected_Units FROM Campaign ORDER BY Collected_Units DESC", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 13️⃣ Top 5 Recent Donations
+app.get("/donations/top5", (req, res) => {
+  db.query("SELECT Donation_ID, Donor_ID, Donation_Date, Quantity_ml FROM Blood_Donation ORDER BY Donation_Date DESC LIMIT 5", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 14️⃣ Oldest Donors
+app.get("/donors/oldest", (req, res) => {
+  db.query("SELECT Name, DOB, Registration_Date FROM Donor ORDER BY Registration_Date ASC LIMIT 3", (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// 15️⃣ Safe Blood Availability (View)
+app.get("/views/safe-blood", (req, res) => {
+  const sql = `
+    SELECT * FROM Safe_Blood_Availability;
+  `;
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
 const PORT = 3001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -1,0 +1,215 @@
+/*
+ * ============================
+ * BLOOD BANK DASHBOARD STYLING
+ * ============================
+ */
+
+/* 🌟 Main Container */
+.looking-blood-container {
+  max-width: 1200px;
+  margin: 40px auto;
+  padding: 35px;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+/* 🔴 Title */
+.looking-blood-container h1 {
+  color: #b30000;
+  text-align: center;
+  margin-bottom: 35px;
+  font-size: 2.4em;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+/* ============================
+ * BUTTON GRID STYLING
+ * ============================
+ */
+.query-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 18px;
+  margin-bottom: 40px;
+}
+
+/* 🔘 Buttons */
+.query-btn {
+  background-color: #b30000;
+  color: #fff;
+  border: none;
+  padding: 14px 18px;
+  border-radius: 10px;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease-in-out;
+  box-shadow: 0 3px 8px rgba(179, 0, 0, 0.2);
+}
+
+.query-btn:hover {
+  background-color: #8c0000;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 10px rgba(179, 0, 0, 0.3);
+}
+
+.query-btn:active {
+  transform: translateY(1px);
+  box-shadow: 0 3px 6px rgba(179, 0, 0, 0.3);
+}
+
+/* 🩸 Active Button Highlight */
+.query-btn.active {
+  background-color: #ff3333;
+  box-shadow: 0 0 0 3px rgba(255, 51, 51, 0.3);
+}
+
+/* ============================
+ * STATUS TEXTS
+ * ============================
+ */
+.loading,
+.no-data {
+  text-align: center;
+  font-size: 1.1em;
+  color: #555;
+  margin-top: 20px;
+  animation: fadeIn 0.4s ease-in-out;
+}
+
+/* ============================
+ * TABLE STYLING
+ * ============================
+ */
+.donors-list {
+  margin-top: 25px;
+  overflow-x: auto;
+  border-radius: 10px;
+}
+
+.donors-list h2 {
+  text-align: center;
+  color: #222;
+  margin-bottom: 15px;
+  font-size: 1.7em;
+  font-weight: 600;
+}
+
+/* 🧾 Table */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background-color: #fff;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+}
+
+/* Table Header */
+thead th {
+  background-color: #b30000;
+  color: #fff;
+  text-transform: uppercase;
+  font-size: 0.9em;
+  font-weight: 600;
+  padding: 12px 15px;
+  text-align: left;
+}
+
+/* Table Rows */
+tbody td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #eee;
+  font-size: 0.95em;
+  color: #333;
+}
+
+/* Row Colors */
+tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+tbody tr:hover {
+  background-color: #ffeaea;
+  transition: background-color 0.2s ease-in-out;
+}
+
+/* ============================
+ * SCROLLBAR STYLING
+ * ============================
+ */
+.donors-list::-webkit-scrollbar {
+  height: 8px;
+}
+.donors-list::-webkit-scrollbar-thumb {
+  background-color: #b30000;
+  border-radius: 10px;
+}
+.donors-list::-webkit-scrollbar-track {
+  background: #f5f5f5;
+}
+
+/* ============================
+ * RESPONSIVENESS
+ * ============================
+ */
+@media (max-width: 900px) {
+  .looking-blood-container {
+    margin: 20px;
+    padding: 25px;
+  }
+
+  .query-buttons {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+  }
+
+  .query-btn {
+    font-size: 0.9em;
+    padding: 12px;
+  }
+
+  table th,
+  table td {
+    padding: 10px;
+    font-size: 0.9em;
+  }
+
+  .looking-blood-container h1 {
+    font-size: 1.9em;
+  }
+}
+
+@media (max-width: 600px) {
+  .query-buttons {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .query-btn {
+    padding: 10px;
+    font-size: 0.85em;
+  }
+
+  .donors-list h2 {
+    font-size: 1.4em;
+  }
+}
+
+/* ============================
+ * ANIMATIONS
+ * ============================
+ */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
