@@ -9,6 +9,7 @@ function Navbar() {
       <ul className="nav-links">
         <li><Link to="/">Home</Link></li>
         <li><Link to="/looking">Search</Link></li>
+        <li><Link to="/insert">Insert Data</Link></li>
       </ul>
     </nav>
   );

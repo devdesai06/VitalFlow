@@ -1,0 +1,68 @@
+.insert-container {
+  text-align: center;
+  padding: 30px;
+  background: #f8fff8;
+  min-height: 100vh;
+}
+
+.insert-options {
+  margin-bottom: 20px;
+}
+
+.insert-options button {
+  margin: 5px;
+  padding: 10px 20px;
+  border: none;
+  background: #00a86b;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.insert-options button.active,
+.insert-options button:hover {
+  background: #008f5a;
+}
+
+.insert-form {
+  background: white;
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-group {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 5px;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.submit-btn {
+  background: #00a86b;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.response {
+  margin-top: 20px;
+  font-weight: 600;
+  color: #007b55;
+}

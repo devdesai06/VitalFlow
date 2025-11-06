@@ -161,5 +161,38 @@ app.get("/views/safe-blood", (req, res) => {
     res.json(results);
   });
 });
+
+// ✅ Insert Donor
+app.post("/insert/donor", (req, res) => {
+  const { Name, Gender, DOB, BloodGroup, Contact_No, Email, Address, Registration_Date } = req.body;
+  const sql = `INSERT INTO Donor (Name, Gender, DOB, BloodGroup, Contact_No, Email, Address, Registration_Date)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+  db.query(sql, [Name, Gender, DOB, BloodGroup, Contact_No, Email, Address, Registration_Date], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: "Donor inserted successfully!" });
+  });
+});
+
+// ✅ Insert Blood Type
+app.post("/insert/bloodtype", (req, res) => {
+  const { BloodGroup, RH_Factor, Description } = req.body;
+  const sql = `INSERT INTO Blood_Type (BloodGroup, RH_Factor, Description) VALUES (?, ?, ?)`;
+  db.query(sql, [BloodGroup, RH_Factor, Description], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: "Blood Type inserted successfully!" });
+  });
+});
+
+// ✅ Insert Blood Donation
+app.post("/insert/donation", (req, res) => {
+  const { Donor_ID, BloodType_ID, Test_ID, Donation_Date, Quantity_ml, Status } = req.body;
+  const sql = `INSERT INTO Blood_Donation (Donor_ID, BloodType_ID, Test_ID, Donation_Date, Quantity_ml, Status)
+               VALUES (?, ?, ?, ?, ?, ?)`;
+  db.query(sql, [Donor_ID, BloodType_ID, Test_ID, Donation_Date, Quantity_ml, Status], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json({ message: "Blood Donation inserted successfully!" });
+  });
+});
+
 const PORT = 3001;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
