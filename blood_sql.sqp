@@ -1,0 +1,1125 @@
+CREATE DATABASE BLOOD_DONATION;
+USE blood_donation;
+-- =====================================================
+-- DATABASE: BLOOD BANK MANAGEMENT SYSTEM
+-- =====================================================
+SET SQL_SAFE_UPDATES = 0;
+-- drop database blood_donation 
+-- =====================================================
+-- 1. DONOR TABLE
+-- =====================================================
+CREATE TABLE Donor (
+    Donor_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Gender VARCHAR(10) CHECK (Gender IN ('Male', 'Female', 'Other')),
+    DOB DATE,
+    BloodGroup VARCHAR(5) NOT NULL,
+    Contact_No VARCHAR(15) UNIQUE,
+    Email VARCHAR(100) UNIQUE,
+    Address VARCHAR(255),
+    Registration_Date DATE
+);
+
+
+-- =====================================================
+-- 2. BLOOD TYPE TABLE
+-- =====================================================
+CREATE TABLE Blood_Type (
+    BloodType_ID INT AUTO_INCREMENT PRIMARY KEY,
+    BloodGroup VARCHAR(5) NOT NULL UNIQUE,
+    RH_Factor CHAR(1) CHECK (RH_Factor IN ('+', '-')),
+    Description VARCHAR(100)
+);
+
+-- =====================================================
+-- 3. BLOOD TEST TABLE
+-- =====================================================
+CREATE TABLE Blood_Test (
+    Test_ID INT AUTO_INCREMENT PRIMARY KEY,
+    HIV_Test VARCHAR(10) CHECK (HIV_Test IN ('Positive', 'Negative')),
+    Hepatitis VARCHAR(10) CHECK (Hepatitis IN ('Positive', 'Negative')),
+    Malaria VARCHAR(10) CHECK (Malaria IN ('Positive', 'Negative')),
+    Test_Date DATE,
+    Result VARCHAR(20) CHECK (Result IN ('Safe', 'Unsafe'))
+);
+
+-- =====================================================
+-- 4. BLOOD DONATION TABLE
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS Blood_Donation (
+    Donation_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Donor_ID INT,
+    BloodType_ID INT,
+    Test_ID INT,
+    Donation_Date DATE NOT NULL,
+    Quantity_ml INT CHECK (Quantity_ml > 0),
+    Status VARCHAR(50) CHECK (Status IN ('Stored', 'Used', 'Discarded')),
+    FOREIGN KEY (Donor_ID) REFERENCES Donor(Donor_ID),
+    FOREIGN KEY (BloodType_ID) REFERENCES Blood_Type(BloodType_ID),
+    FOREIGN KEY (Test_ID) REFERENCES Blood_Test(Test_ID)
+);
+
+
+-- =====================================================
+-- 5. BLOOD INVENTORY TABLE
+-- =====================================================
+CREATE TABLE Blood_Inventory (
+    Inventory_ID INT AUTO_INCREMENT PRIMARY KEY,
+    BloodType_ID INT,
+    Quantity_Units INT CHECK (Quantity_Units >= 0),
+    Last_Updated DATE,
+    FOREIGN KEY (BloodType_ID) REFERENCES Blood_Type(BloodType_ID)
+);
+
+-- =====================================================
+-- 6. HOSPITAL TABLE
+-- =====================================================
+CREATE TABLE Hospital (
+    Hospital_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Hospital_Name VARCHAR(100) NOT NULL UNIQUE,
+    Contact_No VARCHAR(15),
+    Email VARCHAR(100),
+    Address VARCHAR(255)
+);
+
+-- =====================================================
+-- 7. BLOOD REQUEST TABLE
+-- =====================================================
+CREATE TABLE Blood_Request (
+    Request_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Hospital_ID INT,
+    BloodType_ID INT,
+    Requested_Units INT CHECK (Requested_Units > 0),
+    Request_Date DATE,
+    Status VARCHAR(20) CHECK (Status IN ('Pending', 'Approved', 'Completed')),
+    FOREIGN KEY (Hospital_ID) REFERENCES Hospital(Hospital_ID),
+    FOREIGN KEY (BloodType_ID) REFERENCES Blood_Type(BloodType_ID)
+);
+
+-- =====================================================
+-- 8. BLOOD DISTRIBUTION TABLE
+-- =====================================================
+CREATE TABLE Blood_Distribution (
+    Distribution_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Request_ID INT,
+    Inventory_ID INT,
+    Quantity_Distributed INT CHECK (Quantity_Distributed > 0),
+    Dispatch_Date DATE,
+    Delivered_To VARCHAR(100),
+    Status VARCHAR(20) CHECK (Status IN ('Delivered', 'Pending', 'Cancelled')),
+    FOREIGN KEY (Request_ID) REFERENCES Blood_Request(Request_ID),
+    FOREIGN KEY (Inventory_ID) REFERENCES Blood_Inventory(Inventory_ID)
+);
+
+-- =====================================================
+-- 9. STAFF TABLE
+-- =====================================================
+CREATE TABLE Staff (
+    Staff_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Name VARCHAR(100) NOT NULL,
+    Role VARCHAR(50),
+    Contact_No VARCHAR(15) UNIQUE,
+    Email VARCHAR(100),
+    Join_Date DATE,
+    Shift VARCHAR(20) CHECK (Shift IN ('Morning', 'Evening', 'Night'))
+);
+
+-- =====================================================
+-- 10. CAMPAIGN TABLE
+-- =====================================================
+CREATE TABLE Campaign (
+    Campaign_ID INT AUTO_INCREMENT PRIMARY KEY,
+    Campaign_Name VARCHAR(100) NOT NULL,
+    Location VARCHAR(100),
+    Date DATE,
+    Organized_By VARCHAR(100),
+    Collected_Units INT CHECK (Collected_Units >= 0)
+);
+-- =====================================================
+-- INSERTION OF DATA
+-- =====================================================
+USE blood_donation;
+
+-- =====================================================
+-- 2. BLOOD TYPE TABLE 
+-- =====================================================
+INSERT INTO Blood_Type (BloodGroup, RH_Factor, Description)
+VALUES
+('A+', '+', 'Most common type (Accepts A+, A-, O+, O-)'),
+('A-', '-', 'Rare negative type (Accepts A-, O-)'),
+('B+', '+', 'Common type (Accepts B+, B-, O+, O-)'),
+('B-', '-', 'Rare negative type (Accepts B-, O-)'),
+('O+', '+', 'Universal donor to Rh+ (Accepts O+, O-)'),
+('O-', '-', 'Universal donor (Accepts O- only)'),
+('AB+', '+', 'Universal recipient (Accepts all groups)'),
+('AB-', '-', 'Rarest blood group (Accepts AB-, A-, B-, O-)');
+
+-- =====================================================
+-- 3. BLOOD TEST TABLE 
+-- =====================================================
+INSERT INTO Blood_Test (HIV_Test, Hepatitis, Malaria, Test_Date, Result)
+VALUES
+('Negative', 'Negative', 'Negative', '2023-03-01', 'Safe'),
+('Negative', 'Negative', 'Negative', '2023-04-12', 'Safe'),
+('Negative', 'Negative', 'Positive', '2023-04-20', 'Unsafe'), -- Malaria
+('Negative', 'Positive', 'Negative', '2024-02-08', 'Unsafe'), -- Hepatitis
+('Negative', 'Negative', 'Negative', '2022-06-11', 'Safe'),
+('Negative', 'Negative', 'Negative', '2021-11-19', 'Safe'),
+('Positive', 'Negative', 'Negative', '2022-12-25', 'Unsafe'), -- HIV
+('Negative', 'Negative', 'Negative', '2024-05-30', 'Safe'),
+('Negative', 'Positive', 'Negative', '2023-09-10', 'Unsafe'), -- Hepatitis
+('Negative', 'Negative', 'Negative', '2025-01-01', 'Safe'),
+('Negative', 'Negative', 'Negative', '2022-05-02', 'Safe'),
+('Negative', 'Negative', 'Negative', '2024-04-19', 'Safe'),
+('Negative', 'Negative', 'Positive', '2023-03-02', 'Unsafe'), -- Malaria
+('Negative', 'Negative', 'Negative', '2022-10-03', 'Safe'),
+('Negative', 'Positive', 'Negative', '2024-07-09', 'Unsafe'), -- Hepatitis
+('Negative', 'Negative', 'Negative', '2023-05-21', 'Safe'),
+('Negative', 'Negative', 'Negative', '2022-09-17', 'Safe'),
+('Positive', 'Negative', 'Negative', '2024-01-07', 'Unsafe'), -- HIV
+('Negative', 'Negative', 'Negative', '2023-08-03', 'Safe'),
+('Negative', 'Negative', 'Negative', '2024-05-27', 'Safe'),
+('Negative', 'Negative', 'Negative', '2022-04-12', 'Safe'),
+('Negative', 'Positive', 'Negative', '2023-07-03', 'Unsafe'), -- Hepatitis
+('Negative', 'Negative', 'Negative', '2024-01-12', 'Safe'),
+('Negative', 'Negative', 'Positive', '2022-12-02', 'Unsafe'), -- Malaria
+('Negative', 'Negative', 'Negative', '2024-03-07', 'Safe'),
+('Positive', 'Negative', 'Negative', '2023-10-22', 'Unsafe'), -- HIV
+('Negative', 'Negative', 'Negative', '2022-08-17', 'Safe'),
+('Negative', 'Negative', 'Negative', '2024-04-03', 'Safe'),
+('Negative', 'Positive', 'Negative', '2023-06-27', 'Unsafe'), -- Hepatitis
+('Negative', 'Negative', 'Negative', '2024-02-17', 'Safe');
+
+-- =====================================================
+-- 1. DONOR TABLE (3500 entries)
+
+-- =====================================================
+INSERT INTO Donor (Name, Gender, DOB, BloodGroup, Contact_No, Email, Address, Registration_Date) VALUES
+('Rohan Joshi', 'Other', '1977-05-13', 'A-', '9001872959', 'rohan.joshi0@mail.com', 'Delhi, India', '2025-09-23'),
+('Vivaan Reddy', 'Female', '2003-05-14', 'A+', '9002146936', 'vivaan.reddy1@mail.com', 'Delhi, India', '2024-06-23'),
+('Vivaan Iyer', 'Female', '1988-07-27', 'O+', '9006450973', 'vivaan.iyer2@mail.com', 'Mumbai, India', '2025-01-01'),
+('Arjun Iyer', 'Other', '1980-09-17', 'B+', '9004943489', 'arjun.iyer3@mail.com', 'Bangalore, India', '2022-02-14'),
+('Rohan Kapoor', 'Male', '1994-03-08', 'AB-', '9009986240', 'rohan.kapoor4@mail.com', 'Delhi, India', '2023-05-03'),
+('Reyansh Reddy', 'Male', '1976-05-12', 'O-', '9001211798', 'reyansh.reddy5@mail.com', 'Bangalore, India', '2024-07-26'),
+('Rohan Kapoor', 'Male', '1983-01-19', 'O-', '9006327195', 'rohan.kapoor6@mail.com', 'Bangalore, India', '2025-03-31'),
+('Reyansh Rao', 'Other', '1979-01-21', 'B+', '9008921429', 'reyansh.rao7@mail.com', 'Jaipur, India', '2022-07-31'),
+('Vivaan Rao', 'Other', '2005-05-25', 'AB-', '9009100501', 'vivaan.rao8@mail.com', 'Bangalore, India', '2022-12-19'),
+('Rahul Shah', 'Female', '1991-10-25', 'O+', '9008977578', 'rahul.shah9@mail.com', 'Jaipur, India', '2024-04-11'),
+('Krishna Iyer', 'Male', '2003-09-13', 'AB+', '9006948751', 'krishna.iyer10@mail.com', 'Hyderabad, India', '2021-05-01'),
+('Vivaan Pandey', 'Other', '2000-02-07', 'B-', '9004400739', 'vivaan.pandey11@mail.com', 'Bangalore, India', '2022-03-09'),
+('Ishaan Verma', 'Male', '2000-07-19', 'A+', '9004661592', 'ishaan.verma12@mail.com', 'Hyderabad, India', '2023-05-24'),
+('Rahul Iyer', 'Female', '1984-11-22', 'B+', '9001951121', 'rahul.iyer13@mail.com', 'Jaipur, India', '2024-02-05'),
+('Ayaan Pandey', 'Female', '1994-03-28', 'A-', '9006011459', 'ayaan.pandey14@mail.com', 'Hyderabad, India', '2023-08-17'),
+('Dev Shah', 'Other', '1986-04-19', 'B-', '9008034750', 'dev.shah15@mail.com', 'Jaipur, India', '2022-10-01'),
+('Sai Verma', 'Other', '1986-12-26', 'A-', '9002584215', 'sai.verma16@mail.com', 'Mumbai, India', '2022-08-03'),
+('Vihaan Mehta', 'Male', '1978-03-17', 'AB-', '9006810874', 'vihaan.mehta17@mail.com', 'Jaipur, India', '2025-06-01'),
+('Manan Singh', 'Other', '1979-04-24', 'A+', '9007564745', 'manan.singh18@mail.com', 'Bangalore, India', '2024-07-09'),
+('Aditya Yadav', 'Other', '1977-10-28', 'O-', '9008077759', 'aditya.yadav19@mail.com', 'Jaipur, India', '2021-08-05'),
+('Aarav Nair', 'Male', '1990-03-23', 'A+', '9008566993', 'aarav.nair20@mail.com', 'Pune, India', '2025-07-06'),
+('Ayaan Trivedi', 'Male', '1982-04-27', 'AB+', '9006766419', 'ayaan.trivedi21@mail.com', 'Chennai, India', '2023-12-07'),
+('Kabir Yadav', 'Male', '1976-03-03', 'AB+', '9008261141', 'kabir.yadav22@mail.com', 'Delhi, India', '2022-06-01'),
+('Aarav Nair', 'Male', '2005-09-20', 'O+', '9009131170', 'aarav.nair23@mail.com', 'Pune, India', '2021-04-22'),
+('Reyansh Nair', 'Male', '1980-11-11', 'O-', '9002483532', 'reyansh.nair24@mail.com', 'Hyderabad, India', '2025-05-21'),
+('Vivaan Joshi', 'Male', '1984-06-18', 'B-', '9005085588', 'vivaan.joshi25@mail.com', 'Chennai, India', '2022-05-01'),
+('Rahul Trivedi', 'Other', '1995-08-07', 'B-', '9002500916', 'rahul.trivedi26@mail.com', 'Ahmedabad, India', '2022-05-17'),
+('Kabir Kapoor', 'Male', '2000-08-27', 'AB-', '9004976049', 'kabir.kapoor27@mail.com', 'Mumbai, India', '2022-08-19'),
+('Sai Mehta', 'Other', '1982-06-24', 'O-', '9007231591', 'sai.mehta28@mail.com', 'Chennai, India', '2023-02-22'),
+('Vivaan Joshi', 'Female', '1989-06-11', 'A+', '9004430007', 'vivaan.joshi29@mail.com', 'Delhi, India', '2024-01-07'),
+('Krishna Kapoor', 'Female', '1993-04-13', 'B+', '9003080693', 'krishna.kapoor30@mail.com', 'Mumbai, India', '2024-01-12'),
+('Rahul Pandey', 'Female', '2000-10-09', 'B+', '9002703826', 'rahul.pandey31@mail.com', 'Bangalore, India', '2024-09-07'),
+('Ishaan Reddy', 'Other', '1989-07-14', 'AB+', '9009125286', 'ishaan.reddy32@mail.com', 'Bangalore, India', '2024-04-21'),
+('Ishaan Sharma', 'Female', '1998-11-26', 'O-', '9005648208', 'ishaan.sharma33@mail.com', 'Hyderabad, India', '2023-07-25'),
+('Manan Kapoor', 'Male', '1994-12-23', 'AB-', '9004357263', 'manan.kapoor34@mail.com', 'Ahmedabad, India', '2021-05-29'),
+('Aditya Joshi', 'Male', '1975-03-05', 'B-', '9007831562', 'aditya.joshi35@mail.com', 'Hyderabad, India', '2022-09-23'),
+('Arjun Shah', 'Other', '1982-02-12', 'B+', '9006499204', 'arjun.shah36@mail.com', 'Ahmedabad, India', '2022-12-12'),
+('Ayaan Yadav', 'Male', '1978-06-21', 'B-', '9002669402', 'ayaan.yadav37@mail.com', 'Mumbai, India', '2022-07-15'),
+('Krishna Kapoor', 'Other', '1987-05-09', 'O+', '9009719293', 'krishna.kapoor38@mail.com', 'Delhi, India', '2022-05-04'),
+('Ayaan Nair', 'Other', '1978-08-10', 'O-', '9006064279', 'ayaan.nair39@mail.com', 'Hyderabad, India', '2022-11-30'),
+('Karan Shah', 'Female', '2000-01-15', 'AB+', '9001333597', 'karan.shah40@mail.com', 'Chennai, India', '2023-10-21'),
+('Kabir Patel', 'Other', '2001-04-03', 'AB-', '9003575850', 'kabir.patel41@mail.com', 'Bangalore, India', '2021-01-26'),
+('Dev Iyer', 'Other', '1987-10-17', 'A+', '9005232723', 'dev.iyer42@mail.com', 'Hyderabad, India', '2023-10-11'),
+('Karan Iyer', 'Female', '1990-01-20', 'AB+', '9007192113', 'karan.iyer43@mail.com', 'Pune, India', '2024-06-11'),
+('Ishaan Sharma', 'Other', '1988-07-04', 'O+', '9003848619', 'ishaan.sharma44@mail.com', 'Chennai, India', '2024-05-31'),
+('Vivaan Verma', 'Other', '1992-12-08', 'B-', '9004982913', 'vivaan.verma45@mail.com', 'Mumbai, India', '2024-08-29'),
+('Aarav Mehta', 'Female', '1995-12-28', 'AB-', '9006214581', 'aarav.mehta46@mail.com', 'Ahmedabad, India', '2021-08-23'),
+('Manan Chauhan', 'Female', '1975-08-24', 'B-', '9008382382', 'manan.chauhan47@mail.com', 'Jaipur, India', '2022-04-21'),
+('Aditya Sharma', 'Other', '1976-07-21', 'B+', '9002009972', 'aditya.sharma48@mail.com', 'Hyderabad, India', '2022-04-12'),
+('Rohan Joshi', 'Female', '1998-10-09', 'O+', '9007817145', 'rohan.joshi49@mail.com', 'Pune, India', '2025-09-09'),
+('Rahul Kapoor', 'Other', '1994-10-01', 'O+', '9003203733', 'rahul.kapoor50@mail.com', 'Bangalore, India', '2022-01-19'),
+('Sai Pandey', 'Female', '1987-11-08', 'B+', '9004024426', 'sai.pandey51@mail.com', 'Delhi, India', '2022-12-14'),
+('Rohan Sharma', 'Other', '1996-03-10', 'O+', '9009334367', 'rohan.sharma52@mail.com', 'Bangalore, India', '2025-02-28'),
+('Arjun Sharma', 'Male', '1991-10-31', 'O+', '9007354005', 'arjun.sharma53@mail.com', 'Jaipur, India', '2023-09-14'),
+('Ishaan Joshi', 'Female', '1992-04-10', 'A-', '9008091869', 'ishaan.joshi54@mail.com', 'Jaipur, India', '2023-08-20'),
+('Arjun Verma', 'Male', '2000-09-22', 'B+', '9006101962', 'arjun.verma55@mail.com', 'Jaipur, India', '2023-06-01'),
+('Ishaan Shah', 'Male', '2001-02-21', 'AB-', '9009686461', 'ishaan.shah56@mail.com', 'Jaipur, India', '2024-11-05'),
+('Karan Nair', 'Female', '1978-01-03', 'O-', '9008498583', 'karan.nair57@mail.com', 'Mumbai, India', '2021-10-01'),
+('Vivaan Singh', 'Female', '1981-05-10', 'A-', '9009016004', 'vivaan.singh58@mail.com', 'Hyderabad, India', '2025-07-31'),
+('Vivaan Reddy', 'Other', '1986-09-18', 'A+', '9009073119', 'vivaan.reddy59@mail.com', 'Chennai, India', '2022-02-02'),
+('Manan Shah', 'Female', '1980-09-10', 'A+', '9005045648', 'manan.shah60@mail.com', 'Mumbai, India', '2024-12-09'),
+('Krishna Kapoor', 'Male', '1975-09-28', 'B-', '9006003582', 'krishna.kapoor61@mail.com', 'Hyderabad, India', '2023-10-11'),
+('Rohan Nair', 'Other', '1978-11-23', 'B-', '9009968227', 'rohan.nair62@mail.com', 'Pune, India', '2024-11-24'),
+('Ayaan Reddy', 'Female', '1976-03-16', 'AB+', '9002053624', 'ayaan.reddy63@mail.com', 'Mumbai, India', '2023-12-01'),
+('Karan Trivedi', 'Male', '1988-09-02', 'O-', '9004097794', 'karan.trivedi64@mail.com', 'Jaipur, India', '2023-05-17'),
+('Dev Verma', 'Male', '1990-06-18', 'AB-', '9003747719', 'dev.verma65@mail.com', 'Chennai, India', '2021-06-23'),
+('Arjun Joshi', 'Male', '1992-06-27', 'A-', '9007797468', 'arjun.joshi66@mail.com', 'Ahmedabad, India', '2022-03-13'),
+('Sai Trivedi', 'Male', '1981-01-09', 'B+', '9008221076', 'sai.trivedi67@mail.com', 'Bangalore, India', '2024-05-28'),
+('Aarav Patel', 'Male', '2001-12-25', 'B+', '9009722805', 'aarav.patel68@mail.com', 'Chennai, India', '2021-01-15'),
+('Arjun Reddy', 'Other', '2001-12-27', 'AB-', '9007846345', 'arjun.reddy69@mail.com', 'Mumbai, India', '2025-04-08'),
+('Ishaan Mehta', 'Male', '1984-04-02', 'AB-', '9003611426', 'ishaan.mehta70@mail.com', 'Delhi, India', '2025-04-05'),
+('Sai Trivedi', 'Female', '1976-03-23', 'B-', '9002141692', 'sai.trivedi71@mail.com', 'Chennai, India', '2023-05-30'),
+('Dev Rao', 'Female', '1979-09-29', 'B-', '9004914874', 'dev.rao72@mail.com', 'Hyderabad, India', '2025-04-12'),
+('Aarav Trivedi', 'Female', '2005-08-25', 'AB+', '9002140198', 'aarav.trivedi73@mail.com', 'Jaipur, India', '2022-05-20'),
+('Vivaan Mehta', 'Male', '1991-12-15', 'A-', '9001431915', 'vivaan.mehta74@mail.com', 'Hyderabad, India', '2024-12-11'),
+('Karan Verma', 'Female', '2004-01-07', 'B+', '9009035271', 'karan.verma75@mail.com', 'Pune, India', '2022-03-13'),
+('Aditya Yadav', 'Other', '1981-09-10', 'O-', '9007091534', 'aditya.yadav76@mail.com', 'Bangalore, India', '2021-04-02'),
+('Ayaan Patel', 'Female', '1994-11-26', 'AB-', '9004720840', 'ayaan.patel77@mail.com', 'Bangalore, India', '2025-03-30'),
+('Reyansh Trivedi', 'Other', '1985-06-25', 'B+', '9007698822', 'reyansh.trivedi78@mail.com', 'Chennai, India', '2024-11-05'),
+('Ayaan Patel', 'Female', '2004-12-24', 'AB-', '9008704685', 'ayaan.patel79@mail.com', 'Bangalore, India', '2024-05-16'),
+('Vihaan Yadav', 'Male', '1978-02-22', 'B-', '9006538775', 'vihaan.yadav80@mail.com', 'Ahmedabad, India', '2023-10-10'),
+('Dev Rao', 'Other', '1991-01-03', 'AB+', '9004842301', 'dev.rao81@mail.com', 'Bangalore, India', '2023-11-26'),
+('Ishaan Yadav', 'Other', '1977-05-15', 'AB+', '9003953184', 'ishaan.yadav82@mail.com', 'Mumbai, India', '2021-01-30'),
+('Karan Singh', 'Other', '1990-06-25', 'B+', '9007264221', 'karan.singh83@mail.com', 'Delhi, India', '2022-03-17'),
+('Dev Trivedi', 'Other', '2000-04-14', 'AB+', '9005179626', 'dev.trivedi84@mail.com', 'Delhi, India', '2022-11-13'),
+('Arjun Iyer', 'Male', '1996-11-28', 'O+', '9003907556', 'arjun.iyer85@mail.com', 'Jaipur, India', '2023-03-15'),
+('Aarav Iyer', 'Male', '1983-05-30', 'B+', '9001696145', 'aarav.iyer86@mail.com', 'Hyderabad, India', '2025-11-10'),
+('Manan Joshi', 'Male', '2003-12-05', 'B+', '9001101136', 'manan.joshi87@mail.com', 'Pune, India', '2024-09-26'),
+('Dev Iyer', 'Female', '1975-05-20', 'AB+', '9007931223', 'dev.iyer88@mail.com', 'Delhi, India', '2023-11-03'),
+('Vivaan Shah', 'Female', '1999-12-02', 'B-', '9006875605', 'vivaan.shah89@mail.com', 'Bangalore, India', '2023-03-05'),
+('Ishaan Trivedi', 'Female', '1978-09-11', 'B-', '9009133693', 'ishaan.trivedi90@mail.com', 'Hyderabad, India', '2022-09-26'),
+('Arjun Singh', 'Other', '1982-11-23', 'B-', '9003232852', 'arjun.singh91@mail.com', 'Delhi, India', '2022-11-04'),
+('Kabir Nair', 'Male', '1997-05-15', 'O-', '9003886874', 'kabir.nair92@mail.com', 'Bangalore, India', '2022-02-27'),
+('Aditya Rao', 'Other', '2002-10-18', 'A-', '9003177045', 'aditya.rao93@mail.com', 'Chennai, India', '2023-11-15'),
+('Karan Pandey', 'Female', '1975-02-15', 'AB-', '9005771229', 'karan.pandey94@mail.com', 'Pune, India', '2021-09-07'),
+('Sai Mehta', 'Other', '1983-06-22', 'A-', '9004402610', 'sai.mehta95@mail.com', 'Jaipur, India', '2021-02-11'),
+('Karan Trivedi', 'Male', '1992-05-18', 'O-', '9005550547', 'karan.trivedi96@mail.com', 'Chennai, India', '2023-12-06'),
+('Reyansh Iyer', 'Male', '1980-05-26', 'AB-', '9001441453', 'reyansh.iyer97@mail.com', 'Ahmedabad, India', '2022-04-28'),
+('Vivaan Joshi', 'Other', '2001-11-13', 'AB+', '9003624007', 'vivaan.joshi98@mail.com', 'Ahmedabad, India', '2025-11-23'),
+('Krishna Pandey', 'Female', '1982-07-20', 'AB-', '9005471615', 'krishna.pandey99@mail.com', 'Ahmedabad, India', '2023-03-06'),
+('Krishna Pandey', 'Male', '1985-10-07', 'AB+', '9007579590', 'krishna.pandey100@mail.com', 'Mumbai, India', '2023-01-01'),
+('Ayaan Pandey', 'Male', '1987-10-12', 'B+', '9002353792', 'ayaan.pandey101@mail.com', 'Mumbai, India', '2021-11-06'),
+('Ishaan Chauhan', 'Other', '2000-08-25', 'AB+', '9007774060', 'ishaan.chauhan102@mail.com', 'Mumbai, India', '2022-08-12'),
+('Vivaan Yadav', 'Other', '1994-01-16', 'B+', '9009677193', 'vivaan.yadav103@mail.com', 'Hyderabad, India', '2022-07-11'),
+('Vihaan Pandey', 'Male', '1996-08-17', 'B+', '9002474252', 'vihaan.pandey104@mail.com', 'Jaipur, India', '2022-03-05'),
+('Dev Shah', 'Female', '1977-02-10', 'AB+', '9006827628', 'dev.shah105@mail.com', 'Bangalore, India', '2021-10-24'),
+('Dev Chauhan', 'Other', '1992-02-20', 'B-', '9003124094', 'dev.chauhan106@mail.com', 'Jaipur, India', '2024-08-08'),
+('Ayaan Trivedi', 'Other', '1991-12-06', 'O-', '9006086253', 'ayaan.trivedi107@mail.com', 'Ahmedabad, India', '2024-06-13'),
+('Ayaan Reddy', 'Male', '2005-07-06', 'AB-', '9001393068', 'ayaan.reddy108@mail.com', 'Delhi, India', '2025-09-23'),
+('Ayaan Mehta', 'Female', '2002-01-25', 'A-', '9006311049', 'ayaan.mehta109@mail.com', 'Bangalore, India', '2024-07-09'),
+('Aditya Rao', 'Other', '1976-07-26', 'B-', '9002343990', 'aditya.rao110@mail.com', 'Hyderabad, India', '2022-02-11'),
+('Rohan Singh', 'Female', '1978-03-20', 'O+', '9005396335', 'rohan.singh111@mail.com', 'Hyderabad, India', '2024-01-04'),
+('Sai Shah', 'Other', '1976-03-10', 'O+', '9005990659', 'sai.shah112@mail.com', 'Chennai, India', '2024-06-07'),
+('Ayaan Shah', 'Other', '1983-09-30', 'A+', '9003124604', 'ayaan.shah113@mail.com', 'Chennai, India', '2021-10-17'),
+('Reyansh Iyer', 'Male', '1997-09-20', 'B+', '9007343179', 'reyansh.iyer114@mail.com', 'Mumbai, India', '2025-03-29'),
+('Manan Trivedi', 'Female', '1976-08-22', 'A+', '9007952363', 'manan.trivedi115@mail.com', 'Pune, India', '2021-04-08'),
+('Aditya Nair', 'Female', '1977-02-10', 'AB-', '9006247321', 'aditya.nair116@mail.com', 'Mumbai, India', '2025-03-18'),
+('Reyansh Trivedi', 'Female', '2002-11-11', 'O+', '9002080273', 'reyansh.trivedi117@mail.com', 'Pune, India', '2021-12-17'),
+('Karan Rao', 'Female', '1994-07-16', 'A+', '9004180884', 'karan.rao118@mail.com', 'Chennai, India', '2022-07-13'),
+('Rahul Singh', 'Male', '1991-11-15', 'AB-', '9008677306', 'rahul.singh119@mail.com', 'Mumbai, India', '2024-10-23'),
+('Aarav Mehta', 'Female', '1988-06-19', 'O-', '9009032446', 'aarav.mehta120@mail.com', 'Bangalore, India', '2024-04-03'),
+('Arjun Shah', 'Female', '2000-09-16', 'B-', '9004065290', 'arjun.shah121@mail.com', 'Chennai, India', '2022-03-07'),
+('Krishna Joshi', 'Other', '2002-01-07', 'O-', '9006890042', 'krishna.joshi122@mail.com', 'Hyderabad, India', '2025-03-14'),
+('Aditya Yadav', 'Other', '1979-12-04', 'AB+', '9001043055', 'aditya.yadav123@mail.com', 'Ahmedabad, India', '2025-12-19'),
+('Reyansh Singh', 'Male', '1987-12-29', 'B-', '9008448284', 'reyansh.singh124@mail.com', 'Pune, India', '2024-10-18'),
+('Kabir Rao', 'Female', '1982-12-07', 'AB-', '9003931360', 'kabir.rao125@mail.com', 'Hyderabad, India', '2023-03-27'),
+('Aarav Patel', 'Male', '1995-09-05', 'AB-', '9007114368', 'aarav.patel126@mail.com', 'Chennai, India', '2021-10-09'),
+('Dev Kapoor', 'Male', '1988-08-07', 'B+', '9008319134', 'dev.kapoor127@mail.com', 'Chennai, India', '2025-10-02'),
+('Kabir Sharma', 'Other', '1982-09-07', 'A-', '9007747696', 'kabir.sharma128@mail.com', 'Jaipur, India', '2025-12-21'),
+('Arjun Pandey', 'Other', '1998-01-16', 'O-', '9002560413', 'arjun.pandey129@mail.com', 'Mumbai, India', '2025-08-22'),
+('Ayaan Patel', 'Male', '2002-08-24', 'AB-', '9006142353', 'ayaan.patel130@mail.com', 'Chennai, India', '2022-01-05'),
+('Rahul Trivedi', 'Female', '1990-01-06', 'B+', '9003245563', 'rahul.trivedi131@mail.com', 'Pune, India', '2025-08-10'),
+('Dev Nair', 'Other', '1987-06-29', 'B-', '9007170825', 'dev.nair132@mail.com', 'Delhi, India', '2025-05-04'),
+('Vihaan Sharma', 'Male', '1995-04-09', 'O-', '9002963883', 'vihaan.sharma133@mail.com', 'Ahmedabad, India', '2023-07-09'),
+('Kabir Mehta', 'Female', '1993-06-06', 'B-', '9005669275', 'kabir.mehta134@mail.com', 'Hyderabad, India', '2024-01-21'),
+('Ayaan Mehta', 'Female', '1990-01-30', 'O+', '9006606951', 'ayaan.mehta135@mail.com', 'Ahmedabad, India', '2025-09-20'),
+('Vihaan Iyer', 'Female', '1976-06-26', 'AB+', '9006545616', 'vihaan.iyer136@mail.com', 'Chennai, India', '2022-08-21'),
+('Vihaan Nair', 'Other', '1977-01-17', 'B+', '9006258126', 'vihaan.nair137@mail.com', 'Chennai, India', '2025-12-01'),
+('Dev Joshi', 'Female', '1985-02-11', 'B+', '9007348757', 'dev.joshi138@mail.com', 'Delhi, India', '2022-11-22'),
+('Sai Mehta', 'Female', '1997-06-05', 'B+', '9004460941', 'sai.mehta139@mail.com', 'Jaipur, India', '2025-04-29'),
+('Rohan Nair', 'Other', '1975-11-14', 'A-', '9001258011', 'rohan.nair140@mail.com', 'Hyderabad, India', '2022-06-01'),
+('Vihaan Singh', 'Male', '1979-01-28', 'B+', '9003395176', 'vihaan.singh141@mail.com', 'Hyderabad, India', '2023-09-20'),
+('Vihaan Trivedi', 'Female', '1980-02-07', 'AB+', '9003968478', 'vihaan.trivedi142@mail.com', 'Bangalore, India', '2021-04-29'),
+('Arjun Mehta', 'Female', '1998-04-24', 'B+', '9006502777', 'arjun.mehta143@mail.com', 'Ahmedabad, India', '2025-06-13'),
+('Vihaan Joshi', 'Male', '1989-02-07', 'A-', '9007054357', 'vihaan.joshi144@mail.com', 'Bangalore, India', '2021-08-01'),
+('Dev Iyer', 'Male', '2005-05-20', 'B-', '9007576225', 'dev.iyer145@mail.com', 'Jaipur, India', '2025-07-06'),
+('Reyansh Singh', 'Female', '1986-10-12', 'B+', '9008644201', 'reyansh.singh146@mail.com', 'Jaipur, India', '2023-04-21'),
+('Krishna Sharma', 'Male', '1979-03-02', 'AB-', '9002469106', 'krishna.sharma147@mail.com', 'Hyderabad, India', '2023-05-31'),
+('Arjun Iyer', 'Male', '1983-08-22', 'B-', '9009149895', 'arjun.iyer148@mail.com', 'Mumbai, India', '2024-01-29'),
+('Ayaan Kapoor', 'Male', '1977-01-07', 'B+', '9006937724', 'ayaan.kapoor149@mail.com', 'Pune, India', '2022-05-30'),
+('Reyansh Pandey', 'Other', '1989-07-23', 'B-', '9004964972', 'reyansh.pandey150@mail.com', 'Ahmedabad, India', '2023-06-22'),
+('Rohan Sharma', 'Female', '1987-09-23', 'B-', '9006098017', 'rohan.sharma151@mail.com', 'Pune, India', '2024-03-05'),
+('Vivaan Shah', 'Female', '2001-12-29', 'A+', '9005851092', 'vivaan.shah152@mail.com', 'Mumbai, India', '2021-09-15'),
+('Kabir Singh', 'Female', '1987-09-26', 'AB+', '9002828513', 'kabir.singh153@mail.com', 'Chennai, India', '2024-12-28'),
+('Aditya Joshi', 'Other', '1999-06-21', 'A+', '9002914038', 'aditya.joshi154@mail.com', 'Mumbai, India', '2021-09-14'),
+('Manan Sharma', 'Female', '1976-07-04', 'O+', '9006067840', 'manan.sharma155@mail.com', 'Bangalore, India', '2023-01-22'),
+('Ayaan Reddy', 'Male', '1987-02-13', 'A-', '9007468867', 'ayaan.reddy156@mail.com', 'Ahmedabad, India', '2021-08-21'),
+('Rahul Joshi', 'Other', '1986-04-20', 'B-', '9005547167', 'rahul.joshi157@mail.com', 'Bangalore, India', '2024-03-03'),
+('Rohan Patel', 'Other', '1982-05-22', 'B+', '9004787650', 'rohan.patel158@mail.com', 'Chennai, India', '2021-11-14'),
+('Vihaan Sharma', 'Other', '1988-08-28', 'AB-', '9008246442', 'vihaan.sharma159@mail.com', 'Pune, India', '2022-11-27'),
+('Dev Verma', 'Female', '1990-02-28', 'B+', '9002546608', 'dev.verma160@mail.com', 'Chennai, India', '2021-04-15'),
+('Reyansh Mehta', 'Other', '2002-01-17', 'B-', '9003765750', 'reyansh.mehta161@mail.com', 'Hyderabad, India', '2021-07-24'),
+('Ishaan Pandey', 'Female', '1986-10-14', 'O+', '9005163161', 'ishaan.pandey162@mail.com', 'Jaipur, India', '2023-06-09'),
+('Reyansh Rao', 'Other', '2002-01-17', 'AB+', '9005653636', 'reyansh.rao163@mail.com', 'Hyderabad, India', '2023-12-07'),
+('Vivaan Patel', 'Other', '1991-03-20', 'A-', '9003580283', 'vivaan.patel164@mail.com', 'Ahmedabad, India', '2025-07-18'),
+('Aditya Verma', 'Female', '1994-02-22', 'A+', '9002279734', 'aditya.verma165@mail.com', 'Chennai, India', '2023-02-09'),
+('Krishna Verma', 'Other', '2001-09-19', 'A+', '9002316868', 'krishna.verma166@mail.com', 'Mumbai, India', '2025-05-23'),
+('Dev Shah', 'Other', '2005-06-20', 'AB+', '9006529733', 'dev.shah167@mail.com', 'Hyderabad, India', '2023-02-20'),
+('Ishaan Chauhan', 'Other', '2003-08-10', 'AB-', '9005166261', 'ishaan.chauhan168@mail.com', 'Chennai, India', '2022-10-06'),
+('Krishna Reddy', 'Male', '1982-07-28', 'A-', '9009594639', 'krishna.reddy169@mail.com', 'Bangalore, India', '2022-03-23'),
+('Karan Chauhan', 'Female', '1999-05-21', 'A-', '9006829525', 'karan.chauhan170@mail.com', 'Hyderabad, India', '2024-03-05'),
+('Krishna Iyer', 'Male', '2003-04-22', 'A-', '9003643447', 'krishna.iyer171@mail.com', 'Mumbai, India', '2022-01-06'),
+('Reyansh Reddy', 'Female', '1991-04-23', 'AB+', '9006010686', 'reyansh.reddy172@mail.com', 'Delhi, India', '2024-10-10'),
+('Aditya Patel', 'Female', '1993-05-10', 'O+', '9002539861', 'aditya.patel173@mail.com', 'Mumbai, India', '2023-09-21'),
+('Kabir Nair', 'Female', '1993-11-18', 'B+', '9002600666', 'kabir.nair174@mail.com', 'Ahmedabad, India', '2025-04-20'),
+('Ayaan Iyer', 'Female', '2003-03-11', 'AB+', '9004912659', 'ayaan.iyer175@mail.com', 'Jaipur, India', '2024-02-22'),
+('Aarav Mehta', 'Other', '1988-09-12', 'AB-', '9009461369', 'aarav.mehta176@mail.com', 'Jaipur, India', '2023-05-14'),
+('Ishaan Mehta', 'Other', '2004-09-16', 'AB-', '9009247965', 'ishaan.mehta177@mail.com', 'Delhi, India', '2024-09-08'),
+('Arjun Reddy', 'Other', '1998-03-20', 'A-', '9003046475', 'arjun.reddy178@mail.com', 'Mumbai, India', '2022-09-02'),
+('Karan Rao', 'Female', '1992-01-29', 'A+', '9003543474', 'karan.rao179@mail.com', 'Jaipur, India', '2023-07-10'),
+('Sai Joshi', 'Other', '2005-02-21', 'O-', '9007299269', 'sai.joshi180@mail.com', 'Bangalore, India', '2021-02-24'),
+('Aarav Nair', 'Other', '1987-01-28', 'AB-', '9008479691', 'aarav.nair181@mail.com', 'Jaipur, India', '2024-12-22'),
+('Ayaan Verma', 'Female', '2003-01-20', 'O-', '9002196901', 'ayaan.verma182@mail.com', 'Bangalore, India', '2024-05-07'),
+('Ayaan Shah', 'Female', '2001-09-21', 'AB+', '9007631360', 'ayaan.shah183@mail.com', 'Ahmedabad, India', '2021-02-23'),
+('Manan Chauhan', 'Female', '1978-01-28', 'A-', '9005373884', 'manan.chauhan184@mail.com', 'Chennai, India', '2022-07-08'),
+('Arjun Verma', 'Male', '1994-03-15', 'A-', '9004914324', 'arjun.verma185@mail.com', 'Hyderabad, India', '2021-03-15'),
+('Karan Verma', 'Male', '1987-05-25', 'B+', '9007332633', 'karan.verma186@mail.com', 'Pune, India', '2023-08-13'),
+('Karan Pandey', 'Male', '1976-11-05', 'AB-', '9002061035', 'karan.pandey187@mail.com', 'Jaipur, India', '2021-03-16'),
+('Ayaan Sharma', 'Female', '1983-05-05', 'AB-', '9003978866', 'ayaan.sharma188@mail.com', 'Hyderabad, India', '2023-07-21'),
+('Ishaan Trivedi', 'Female', '1991-12-21', 'A-', '9003351030', 'ishaan.trivedi189@mail.com', 'Jaipur, India', '2021-09-25'),
+('Aditya Pandey', 'Male', '1976-08-23', 'A-', '9008014027', 'aditya.pandey190@mail.com', 'Ahmedabad, India', '2021-07-09'),
+('Rohan Reddy', 'Female', '1988-07-09', 'O+', '9006045317', 'rohan.reddy191@mail.com', 'Bangalore, India', '2024-07-24'),
+('Ayaan Pandey', 'Other', '2000-03-31', 'B-', '9008833784', 'ayaan.pandey192@mail.com', 'Pune, India', '2023-10-22'),
+('Manan Verma', 'Male', '2005-08-08', 'B-', '9009725716', 'manan.verma193@mail.com', 'Chennai, India', '2025-02-24'),
+('Aditya Verma', 'Female', '2001-03-12', 'O+', '9009774282', 'aditya.verma194@mail.com', 'Chennai, India', '2024-12-31'),
+('Reyansh Nair', 'Female', '1981-11-11', 'B-', '9006692234', 'reyansh.nair195@mail.com', 'Chennai, India', '2022-12-15'),
+('Manan Patel', 'Male', '1976-08-13', 'A-', '9003753451', 'manan.patel196@mail.com', 'Ahmedabad, India', '2024-02-03'),
+('Ayaan Yadav', 'Female', '1989-02-25', 'B+', '9005360309', 'ayaan.yadav197@mail.com', 'Jaipur, India', '2021-10-22'),
+('Rahul Reddy', 'Female', '1994-04-26', 'AB+', '9007247177', 'rahul.reddy198@mail.com', 'Delhi, India', '2025-07-25'),
+('Ayaan Sharma', 'Other', '1995-03-25', 'AB+', '9004845629', 'ayaan.sharma199@mail.com', 'Hyderabad, India', '2021-02-24'),
+('Karan Verma', 'Male', '1983-12-21', 'AB+', '9006840404', 'karan.verma200@mail.com', 'Mumbai, India', '2024-03-26'),
+('Dev Sharma', 'Female', '1985-07-17', 'B-', '9006759419', 'dev.sharma201@mail.com', 'Delhi, India', '2022-02-25'),
+('Vivaan Shah', 'Other', '1991-12-24', 'AB+', '9008420723', 'vivaan.shah202@mail.com', 'Mumbai, India', '2023-06-01'),
+('Manan Singh', 'Male', '1976-02-24', 'AB-', '9002495333', 'manan.singh203@mail.com', 'Hyderabad, India', '2021-10-03'),
+('Vivaan Sharma', 'Male', '1989-07-28', 'B+', '9009175938', 'vivaan.sharma204@mail.com', 'Chennai, India', '2023-07-27'),
+('Reyansh Mehta', 'Male', '2005-04-30', 'O-', '9009062818', 'reyansh.mehta205@mail.com', 'Bangalore, India', '2023-05-29'),
+('Rahul Yadav', 'Male', '1979-08-08', 'AB-', '9008546626', 'rahul.yadav206@mail.com', 'Ahmedabad, India', '2022-04-18'),
+('Rahul Yadav', 'Male', '1997-06-03', 'O+', '9009165890', 'rahul.yadav207@mail.com', 'Pune, India', '2022-01-31'),
+('Vivaan Shah', 'Other', '2003-06-28', 'A+', '9002326510', 'vivaan.shah208@mail.com', 'Bangalore, India', '2022-10-22'),
+('Rohan Trivedi', 'Female', '1977-06-12', 'O+', '9002772208', 'rohan.trivedi209@mail.com', 'Pune, India', '2022-07-28'),
+('Sai Nair', 'Other', '1990-08-08', 'AB+', '9008302686', 'sai.nair210@mail.com', 'Mumbai, India', '2022-04-11'),
+('Aditya Iyer', 'Female', '1998-03-31', 'AB+', '9008416775', 'aditya.iyer211@mail.com', 'Chennai, India', '2022-03-30'),
+('Ayaan Verma', 'Other', '2001-08-14', 'O+', '9005767923', 'ayaan.verma212@mail.com', 'Hyderabad, India', '2022-02-24'),
+('Arjun Nair', 'Other', '1982-05-20', 'O+', '9002345380', 'arjun.nair213@mail.com', 'Ahmedabad, India', '2023-05-15'),
+('Krishna Patel', 'Female', '1999-01-23', 'AB-', '9007304697', 'krishna.patel214@mail.com', 'Chennai, India', '2021-08-17'),
+('Karan Pandey', 'Other', '1975-04-12', 'B-', '9009249580', 'karan.pandey215@mail.com', 'Delhi, India', '2024-01-03'),
+('Dev Patel', 'Female', '2004-05-14', 'O+', '9009966873', 'dev.patel216@mail.com', 'Ahmedabad, India', '2024-06-08'),
+('Vihaan Kapoor', 'Other', '1984-09-07', 'O-', '9007703304', 'vihaan.kapoor217@mail.com', 'Delhi, India', '2022-03-27'),
+('Rahul Mehta', 'Female', '1995-04-21', 'B-', '9007434261', 'rahul.mehta218@mail.com', 'Ahmedabad, India', '2022-10-06'),
+('Aarav Rao', 'Other', '1992-01-02', 'AB-', '9002827811', 'aarav.rao219@mail.com', 'Bangalore, India', '2024-12-16'),
+('Vihaan Kapoor', 'Male', '2002-12-21', 'AB-', '9009365028', 'vihaan.kapoor220@mail.com', 'Chennai, India', '2021-10-05'),
+('Sai Chauhan', 'Female', '2005-11-01', 'A+', '9009777388', 'sai.chauhan221@mail.com', 'Hyderabad, India', '2025-02-05'),
+('Ayaan Shah', 'Other', '2001-01-19', 'AB-', '9007763961', 'ayaan.shah222@mail.com', 'Pune, India', '2025-04-10'),
+('Krishna Iyer', 'Female', '2002-01-03', 'B-', '9007689463', 'krishna.iyer223@mail.com', 'Pune, India', '2025-04-04'),
+('Aarav Joshi', 'Female', '1981-05-15', 'B+', '9001816580', 'aarav.joshi224@mail.com', 'Hyderabad, India', '2023-07-05'),
+('Ishaan Mehta', 'Male', '2003-10-10', 'O+', '9007722330', 'ishaan.mehta225@mail.com', 'Delhi, India', '2022-06-12'),
+('Manan Trivedi', 'Female', '1995-11-17', 'B-', '9009635235', 'manan.trivedi226@mail.com', 'Chennai, India', '2025-03-26'),
+('Vivaan Singh', 'Female', '1985-05-22', 'A+', '9004727663', 'vivaan.singh227@mail.com', 'Jaipur, India', '2024-04-01'),
+('Manan Reddy', 'Male', '2005-06-08', 'B-', '9009968081', 'manan.reddy228@mail.com', 'Jaipur, India', '2022-08-29'),
+('Karan Mehta', 'Female', '1996-01-19', 'O+', '9008886641', 'karan.mehta229@mail.com', 'Hyderabad, India', '2021-07-03'),
+('Dev Patel', 'Female', '1985-09-25', 'A+', '9009463804', 'dev.patel230@mail.com', 'Mumbai, India', '2023-03-16'),
+('Kabir Verma', 'Female', '1989-05-05', 'O-', '9003224406', 'kabir.verma231@mail.com', 'Mumbai, India', '2024-10-29'),
+('Ishaan Singh', 'Female', '1978-03-08', 'AB-', '9005871474', 'ishaan.singh232@mail.com', 'Ahmedabad, India', '2025-04-28'),
+('Ishaan Trivedi', 'Male', '2000-07-12', 'B-', '9006444794', 'ishaan.trivedi233@mail.com', 'Mumbai, India', '2021-12-09'),
+('Arjun Rao', 'Other', '2000-02-16', 'B+', '9004670980', 'arjun.rao234@mail.com', 'Delhi, India', '2023-09-10'),
+('Ayaan Sharma', 'Male', '1991-04-27', 'O+', '9006745306', 'ayaan.sharma235@mail.com', 'Hyderabad, India', '2021-01-09'),
+('Ishaan Verma', 'Other', '1976-01-01', 'O-', '9008975279', 'ishaan.verma236@mail.com', 'Ahmedabad, India', '2022-12-19'),
+('Vivaan Nair', 'Male', '1991-06-01', 'O-', '9004144090', 'vivaan.nair237@mail.com', 'Hyderabad, India', '2021-01-14'),
+('Vivaan Patel', 'Female', '1975-10-21', 'O-', '9007233074', 'vivaan.patel238@mail.com', 'Bangalore, India', '2022-05-21'),
+('Aarav Chauhan', 'Other', '1982-11-17', 'O+', '9004891863', 'aarav.chauhan239@mail.com', 'Hyderabad, India', '2023-12-31'),
+('Krishna Yadav', 'Female', '1989-02-13', 'AB+', '9005246363', 'krishna.yadav240@mail.com', 'Jaipur, India', '2024-09-15'),
+('Krishna Chauhan', 'Other', '1993-08-09', 'B-', '9003705565', 'krishna.chauhan241@mail.com', 'Bangalore, India', '2024-04-21'),
+('Ishaan Kapoor', 'Male', '1975-07-22', 'AB+', '9005459834', 'ishaan.kapoor242@mail.com', 'Mumbai, India', '2023-04-27'),
+('Rahul Kapoor', 'Female', '1989-04-19', 'A-', '9001920902', 'rahul.kapoor243@mail.com', 'Hyderabad, India', '2025-01-22'),
+('Vihaan Reddy', 'Other', '1999-09-20', 'B+', '9001065461', 'vihaan.reddy244@mail.com', 'Hyderabad, India', '2021-11-18'),
+('Dev Joshi', 'Other', '1999-12-11', 'A-', '9009836551', 'dev.joshi245@mail.com', 'Delhi, India', '2024-06-23'),
+('Vivaan Iyer', 'Female', '2000-10-16', 'B+', '9006553609', 'vivaan.iyer246@mail.com', 'Pune, India', '2023-03-29'),
+('Vihaan Kapoor', 'Female', '2005-02-14', 'A+', '9009284480', 'vihaan.kapoor247@mail.com', 'Jaipur, India', '2021-06-18'),
+('Reyansh Pandey', 'Male', '1982-09-25', 'AB+', '9007380156', 'reyansh.pandey248@mail.com', 'Delhi, India', '2024-08-30'),
+('Vihaan Joshi', 'Male', '1981-10-21', 'B+', '9003571064', 'vihaan.joshi249@mail.com', 'Hyderabad, India', '2023-05-25'),
+('Sai Nair', 'Female', '1979-12-26', 'B-', '9002447677', 'sai.nair250@mail.com', 'Jaipur, India', '2021-07-23'),
+('Manan Joshi', 'Female', '1976-12-19', 'AB+', '9004434770', 'manan.joshi251@mail.com', 'Chennai, India', '2021-07-14'),
+('Aarav Iyer', 'Male', '1985-04-24', 'O-', '9009792946', 'aarav.iyer252@mail.com', 'Mumbai, India', '2024-11-05'),
+('Ishaan Verma', 'Male', '1985-10-01', 'O+', '9005961395', 'ishaan.verma253@mail.com', 'Ahmedabad, India', '2022-03-23'),
+('Rahul Rao', 'Female', '1997-01-07', 'O-', '9008826584', 'rahul.rao254@mail.com', 'Pune, India', '2023-02-13'),
+('Rohan Nair', 'Male', '1986-01-23', 'O+', '9001487833', 'rohan.nair255@mail.com', 'Delhi, India', '2022-02-05'),
+('Aditya Verma', 'Other', '1979-08-02', 'A-', '9009729913', 'aditya.verma256@mail.com', 'Bangalore, India', '2024-03-20'),
+('Arjun Chauhan', 'Male', '1995-07-27', 'A-', '9005932989', 'arjun.chauhan257@mail.com', 'Bangalore, India', '2023-02-23'),
+('Manan Singh', 'Female', '1999-05-06', 'B-', '9007518632', 'manan.singh258@mail.com', 'Pune, India', '2021-04-02'),
+('Vihaan Sharma', 'Female', '1983-03-19', 'O+', '9009833817', 'vihaan.sharma259@mail.com', 'Bangalore, India', '2022-04-03'),
+('Reyansh Sharma', 'Male', '1981-08-20', 'AB+', '9001694455', 'reyansh.sharma260@mail.com', 'Bangalore, India', '2022-11-19'),
+('Aditya Singh', 'Female', '2002-09-09', 'B+', '9001212647', 'aditya.singh261@mail.com', 'Mumbai, India', '2023-03-20'),
+('Krishna Iyer', 'Female', '1991-12-07', 'A-', '9004100629', 'krishna.iyer262@mail.com', 'Bangalore, India', '2022-05-30'),
+('Ishaan Joshi', 'Other', '1991-06-03', 'B-', '9004971115', 'ishaan.joshi263@mail.com', 'Bangalore, India', '2021-01-13'),
+('Reyansh Singh', 'Other', '1997-05-15', 'B-', '9007168637', 'reyansh.singh264@mail.com', 'Chennai, India', '2025-05-20'),
+('Aarav Singh', 'Other', '1979-01-10', 'A-', '9003220110', 'aarav.singh265@mail.com', 'Hyderabad, India', '2021-08-07'),
+('Aditya Rao', 'Female', '1977-02-27', 'B+', '9002190534', 'aditya.rao266@mail.com', 'Hyderabad, India', '2021-01-30'),
+('Aditya Trivedi', 'Other', '1992-11-19', 'A+', '9008237381', 'aditya.trivedi267@mail.com', 'Delhi, India', '2024-02-24'),
+('Ayaan Kapoor', 'Male', '1999-01-26', 'A+', '9005780341', 'ayaan.kapoor268@mail.com', 'Delhi, India', '2022-03-14'),
+('Arjun Mehta', 'Female', '1981-04-16', 'AB+', '9001274883', 'arjun.mehta269@mail.com', 'Bangalore, India', '2023-01-03'),
+('Manan Yadav', 'Male', '1998-01-11', 'B-', '9002966263', 'manan.yadav270@mail.com', 'Mumbai, India', '2025-01-17'),
+('Reyansh Chauhan', 'Male', '1978-03-25', 'AB+', '9003652296', 'reyansh.chauhan271@mail.com', 'Jaipur, India', '2021-03-03'),
+('Aarav Sharma', 'Male', '1989-03-23', 'AB+', '9008200913', 'aarav.sharma272@mail.com', 'Ahmedabad, India', '2024-10-12'),
+('Aarav Reddy', 'Other', '1975-08-21', 'O+', '9008569052', 'aarav.reddy273@mail.com', 'Delhi, India', '2021-10-01'),
+('Aarav Pandey', 'Female', '1990-03-28', 'A+', '9006367891', 'aarav.pandey274@mail.com', 'Chennai, India', '2024-06-07'),
+('Sai Chauhan', 'Female', '1979-10-19', 'O+', '9008513207', 'sai.chauhan275@mail.com', 'Hyderabad, India', '2022-04-04'),
+('Dev Rao', 'Male', '1993-10-13', 'B+', '9001534281', 'dev.rao276@mail.com', 'Chennai, India', '2023-12-29'),
+('Sai Mehta', 'Male', '1982-05-15', 'A-', '9007689387', 'sai.mehta277@mail.com', 'Jaipur, India', '2022-06-19'),
+('Sai Rao', 'Male', '1992-10-21', 'A+', '9004135116', 'sai.rao278@mail.com', 'Ahmedabad, India', '2022-03-14'),
+('Krishna Chauhan', 'Female', '1983-03-19', 'O-', '9008406137', 'krishna.chauhan279@mail.com', 'Bangalore, India', '2022-01-20'),
+('Arjun Kapoor', 'Male', '1987-05-26', 'B-', '9008659056', 'arjun.kapoor280@mail.com', 'Delhi, India', '2022-03-28'),
+('Sai Nair', 'Female', '1993-05-27', 'B+', '9004019718', 'sai.nair281@mail.com', 'Delhi, India', '2021-09-02'),
+('Aditya Kapoor', 'Male', '1979-02-22', 'O-', '9005113318', 'aditya.kapoor282@mail.com', 'Ahmedabad, India', '2022-03-25'),
+('Kabir Pandey', 'Male', '2003-10-09', 'O+', '9009038101', 'kabir.pandey283@mail.com', 'Jaipur, India', '2022-10-15'),
+('Ayaan Iyer', 'Male', '1977-05-11', 'A-', '9007191281', 'ayaan.iyer284@mail.com', 'Delhi, India', '2024-04-30'),
+('Ishaan Nair', 'Female', '1986-12-23', 'B-', '9008841063', 'ishaan.nair285@mail.com', 'Ahmedabad, India', '2024-10-05'),
+('Reyansh Chauhan', 'Female', '1999-03-18', 'A-', '9001160871', 'reyansh.chauhan286@mail.com', 'Ahmedabad, India', '2025-03-17'),
+('Vivaan Verma', 'Other', '2003-11-27', 'O-', '9001769281', 'vivaan.verma287@mail.com', 'Jaipur, India', '2023-02-03'),
+('Aarav Trivedi', 'Male', '1988-04-26', 'O-', '9001529300', 'aarav.trivedi288@mail.com', 'Chennai, India', '2023-01-19'),
+('Karan Joshi', 'Female', '1988-12-22', 'A-', '9009346784', 'karan.joshi289@mail.com', 'Hyderabad, India', '2024-09-10'),
+('Krishna Nair', 'Female', '1977-03-11', 'AB-', '9002716085', 'krishna.nair290@mail.com', 'Jaipur, India', '2023-08-29'),
+('Rahul Patel', 'Other', '1980-03-07', 'O+', '9005085920', 'rahul.patel291@mail.com', 'Ahmedabad, India', '2025-07-11'),
+('Ishaan Verma', 'Male', '1991-07-28', 'AB-', '9009063689', 'ishaan.verma292@mail.com', 'Chennai, India', '2023-03-31'),
+('Krishna Sharma', 'Male', '2005-02-13', 'A-', '9009533254', 'krishna.sharma293@mail.com', 'Jaipur, India', '2022-07-25'),
+('Rohan Rao', 'Female', '2004-05-14', 'B+', '9006277431', 'rohan.rao294@mail.com', 'Hyderabad, India', '2022-11-27'),
+('Aditya Mehta', 'Other', '2005-08-03', 'B+', '9009897151', 'aditya.mehta295@mail.com', 'Bangalore, India', '2025-08-09'),
+('Karan Verma', 'Female', '1983-06-14', 'A-', '9005372252', 'karan.verma296@mail.com', 'Hyderabad, India', '2021-07-30'),
+('Reyansh Shah', 'Female', '1988-10-27', 'A-', '9008085197', 'reyansh.shah297@mail.com', 'Delhi, India', '2021-03-19'),
+('Karan Joshi', 'Other', '1979-01-31', 'A+', '9006909477', 'karan.joshi298@mail.com', 'Mumbai, India', '2024-04-23'),
+('Dev Reddy', 'Male', '1998-09-24', 'B-', '9007726681', 'dev.reddy299@mail.com', 'Mumbai, India', '2021-11-29'),
+('Sai Mehta', 'Male', '1980-12-09', 'AB+', '9003998261', 'sai.mehta300@mail.com', 'Bangalore, India', '2023-10-12'),
+('Vivaan Pandey', 'Female', '1986-04-13', 'AB-', '9008907349', 'vivaan.pandey301@mail.com', 'Delhi, India', '2021-11-14'),
+('Vihaan Sharma', 'Other', '1979-09-08', 'AB-', '9003709824', 'vihaan.sharma302@mail.com', 'Pune, India', '2024-08-18'),
+('Kabir Nair', 'Other', '2004-01-20', 'B-', '9004560157', 'kabir.nair303@mail.com', 'Jaipur, India', '2022-04-30'),
+('Rahul Mehta', 'Other', '1994-03-03', 'A+', '9001642926', 'rahul.mehta304@mail.com', 'Pune, India', '2025-05-19'),
+('Krishna Verma', 'Female', '1998-07-25', 'AB+', '9001797961', 'krishna.verma305@mail.com', 'Chennai, India', '2022-07-26'),
+('Aarav Verma', 'Female', '2004-04-01', 'AB+', '9006859013', 'aarav.verma306@mail.com', 'Pune, India', '2021-11-20'),
+('Ishaan Verma', 'Other', '1985-03-09', 'O+', '9007613583', 'ishaan.verma307@mail.com', 'Bangalore, India', '2025-03-28'),
+('Kabir Verma', 'Female', '2001-03-20', 'B+', '9005720205', 'kabir.verma308@mail.com', 'Pune, India', '2023-04-08'),
+('Karan Patel', 'Male', '1986-04-26', 'AB+', '9009784926', 'karan.patel309@mail.com', 'Delhi, India', '2022-01-16'),
+('Vihaan Kapoor', 'Female', '1993-07-10', 'A-', '9008251359', 'vihaan.kapoor310@mail.com', 'Hyderabad, India', '2025-08-14'),
+('Vivaan Shah', 'Female', '1994-09-14', 'A+', '9007833715', 'vivaan.shah311@mail.com', 'Bangalore, India', '2025-08-23'),
+('Manan Patel', 'Female', '1993-08-22', 'A-', '9002003616', 'manan.patel312@mail.com', 'Jaipur, India', '2022-05-21'),
+('Ayaan Patel', 'Other', '2003-06-22', 'A-', '9008870441', 'ayaan.patel313@mail.com', 'Delhi, India', '2025-06-08'),
+('Vihaan Patel', 'Female', '1997-09-06', 'AB+', '9006674156', 'vihaan.patel314@mail.com', 'Bangalore, India', '2021-03-30'),
+('Dev Trivedi', 'Female', '2001-06-12', 'A-', '9003154764', 'dev.trivedi315@mail.com', 'Hyderabad, India', '2024-06-17'),
+('Ishaan Kapoor', 'Female', '1997-09-16', 'A+', '9003813683', 'ishaan.kapoor316@mail.com', 'Delhi, India', '2021-08-15'),
+('Karan Patel', 'Other', '1994-07-28', 'O+', '9003424567', 'karan.patel317@mail.com', 'Chennai, India', '2023-01-04'),
+('Vihaan Nair', 'Other', '1987-03-29', 'A+', '9005073333', 'vihaan.nair318@mail.com', 'Hyderabad, India', '2025-03-26'),
+('Sai Yadav', 'Female', '1990-01-08', 'O+', '9009218002', 'sai.yadav319@mail.com', 'Ahmedabad, India', '2021-08-12'),
+('Aditya Nair', 'Other', '2003-04-30', 'O+', '9007228739', 'aditya.nair320@mail.com', 'Bangalore, India', '2021-05-02'),
+('Rahul Trivedi', 'Other', '2002-08-05', 'O-', '9007178712', 'rahul.trivedi321@mail.com', 'Pune, India', '2025-03-11'),
+('Reyansh Yadav', 'Female', '1995-02-20', 'A+', '9007619266', 'reyansh.yadav322@mail.com', 'Mumbai, India', '2023-06-04'),
+('Arjun Patel', 'Female', '1980-05-24', 'O-', '9004083809', 'arjun.patel323@mail.com', 'Mumbai, India', '2024-05-08'),
+('Aarav Yadav', 'Other', '1995-09-09', 'A-', '9003443518', 'aarav.yadav324@mail.com', 'Pune, India', '2024-07-19'),
+('Karan Joshi', 'Other', '1985-09-01', 'O-', '9005679833', 'karan.joshi325@mail.com', 'Mumbai, India', '2021-01-30'),
+('Ishaan Nair', 'Female', '1985-08-22', 'B-', '9006096099', 'ishaan.nair326@mail.com', 'Chennai, India', '2025-01-25'),
+('Ayaan Mehta', 'Male', '1998-12-20', 'B-', '9007287591', 'ayaan.mehta327@mail.com', 'Bangalore, India', '2021-05-09'),
+('Vivaan Nair', 'Male', '1996-12-04', 'B+', '9007389985', 'vivaan.nair328@mail.com', 'Pune, India', '2023-02-08'),
+('Reyansh Chauhan', 'Other', '1985-11-30', 'A-', '9003308789', 'reyansh.chauhan329@mail.com', 'Delhi, India', '2025-06-05'),
+('Rohan Joshi', 'Male', '1990-11-10', 'A-', '9001403367', 'rohan.joshi330@mail.com', 'Jaipur, India', '2024-12-14'),
+('Aarav Nair', 'Female', '1998-10-23', 'A-', '9008029180', 'aarav.nair331@mail.com', 'Ahmedabad, India', '2025-11-28'),
+('Aditya Trivedi', 'Male', '2005-11-30', 'B+', '9008616631', 'aditya.trivedi332@mail.com', 'Hyderabad, India', '2022-09-06'),
+('Dev Chauhan', 'Female', '1999-10-30', 'AB+', '9008193617', 'dev.chauhan333@mail.com', 'Mumbai, India', '2022-08-25'),
+('Arjun Joshi', 'Female', '1991-04-15', 'A+', '9001977814', 'arjun.joshi334@mail.com', 'Bangalore, India', '2023-06-13'),
+('Sai Yadav', 'Male', '2003-01-04', 'O+', '9001797422', 'sai.yadav335@mail.com', 'Chennai, India', '2022-02-20'),
+('Vivaan Shah', 'Other', '2005-02-23', 'A-', '9008764334', 'vivaan.shah336@mail.com', 'Pune, India', '2025-09-03'),
+('Arjun Reddy', 'Male', '1997-12-20', 'A-', '9003126363', 'arjun.reddy337@mail.com', 'Bangalore, India', '2022-11-21'),
+('Dev Mehta', 'Male', '1991-05-22', 'B+', '9009500049', 'dev.mehta338@mail.com', 'Mumbai, India', '2022-10-31'),
+('Dev Trivedi', 'Male', '1980-10-25', 'O+', '9001873246', 'dev.trivedi339@mail.com', 'Ahmedabad, India', '2021-01-17'),
+('Aarav Rao', 'Male', '2002-10-17', 'B-', '9007038075', 'aarav.rao340@mail.com', 'Mumbai, India', '2023-04-25'),
+('Aarav Yadav', 'Female', '1999-06-21', 'AB-', '9006439866', 'aarav.yadav341@mail.com', 'Hyderabad, India', '2023-01-04'),
+('Manan Mehta', 'Male', '1992-01-24', 'AB+', '9001996950', 'manan.mehta342@mail.com', 'Delhi, India', '2025-12-10'),
+('Ishaan Sharma', 'Female', '1995-08-07', 'O-', '9006179803', 'ishaan.sharma343@mail.com', 'Delhi, India', '2021-05-11'),
+('Karan Mehta', 'Female', '1977-05-21', 'A+', '9009208533', 'karan.mehta344@mail.com', 'Ahmedabad, India', '2021-04-15'),
+('Krishna Patel', 'Female', '1991-04-20', 'A-', '9003281872', 'krishna.patel345@mail.com', 'Ahmedabad, India', '2022-05-08'),
+('Krishna Joshi', 'Other', '1977-04-07', 'O-', '9003518763', 'krishna.joshi346@mail.com', 'Bangalore, India', '2022-09-15'),
+('Manan Reddy', 'Female', '1995-10-20', 'B+', '9003852632', 'manan.reddy347@mail.com', 'Ahmedabad, India', '2022-10-11'),
+('Manan Iyer', 'Other', '1985-12-31', 'O+', '9007677150', 'manan.iyer348@mail.com', 'Delhi, India', '2022-09-29'),
+('Aditya Kapoor', 'Female', '2002-05-26', 'A-', '9003080575', 'aditya.kapoor349@mail.com', 'Jaipur, India', '2023-01-31'),
+('Sai Chauhan', 'Other', '1998-01-25', 'B-', '9001093020', 'sai.chauhan350@mail.com', 'Chennai, India', '2025-07-02'),
+('Krishna Reddy', 'Male', '2001-09-06', 'AB+', '9003045308', 'krishna.reddy351@mail.com', 'Pune, India', '2022-09-11'),
+('Aditya Joshi', 'Other', '2001-01-25', 'B-', '9009902143', 'aditya.joshi352@mail.com', 'Mumbai, India', '2021-05-27'),
+('Manan Kapoor', 'Male', '1997-06-04', 'B-', '9004871258', 'manan.kapoor353@mail.com', 'Pune, India', '2022-12-17'),
+('Reyansh Singh', 'Male', '2003-07-22', 'A+', '9006274247', 'reyansh.singh354@mail.com', 'Chennai, India', '2022-07-24'),
+('Karan Pandey', 'Male', '2005-03-04', 'A-', '9004187106', 'karan.pandey355@mail.com', 'Bangalore, India', '2025-09-13'),
+('Vihaan Shah', 'Female', '1999-11-23', 'AB+', '9009472330', 'vihaan.shah356@mail.com', 'Hyderabad, India', '2022-06-12'),
+('Ishaan Chauhan', 'Female', '1979-01-02', 'O+', '9001725736', 'ishaan.chauhan357@mail.com', 'Hyderabad, India', '2025-11-17'),
+('Ayaan Chauhan', 'Female', '2002-04-18', 'A-', '9007616916', 'ayaan.chauhan358@mail.com', 'Ahmedabad, India', '2022-11-24'),
+('Ayaan Trivedi', 'Other', '1993-02-28', 'AB-', '9006726481', 'ayaan.trivedi359@mail.com', 'Mumbai, India', '2025-01-16'),
+('Vivaan Pandey', 'Male', '1979-12-07', 'A-', '9007651036', 'vivaan.pandey360@mail.com', 'Bangalore, India', '2022-06-18'),
+('Reyansh Verma', 'Female', '1980-11-17', 'O+', '9002597021', 'reyansh.verma361@mail.com', 'Delhi, India', '2021-09-04'),
+('Vivaan Nair', 'Other', '1978-05-08', 'O-', '9004848660', 'vivaan.nair362@mail.com', 'Jaipur, India', '2024-12-27'),
+('Krishna Singh', 'Female', '1995-10-24', 'A+', '9005440597', 'krishna.singh363@mail.com', 'Hyderabad, India', '2025-01-19'),
+('Manan Sharma', 'Female', '1992-08-18', 'B+', '9003151991', 'manan.sharma364@mail.com', 'Ahmedabad, India', '2023-10-07'),
+('Aarav Mehta', 'Male', '2001-10-09', 'B+', '9009170957', 'aarav.mehta365@mail.com', 'Delhi, India', '2025-08-22'),
+('Vivaan Yadav', 'Other', '1983-10-31', 'B+', '9004402107', 'vivaan.yadav366@mail.com', 'Delhi, India', '2021-02-14'),
+('Krishna Kapoor', 'Other', '2004-03-27', 'AB-', '9009147251', 'krishna.kapoor367@mail.com', 'Jaipur, India', '2023-11-06'),
+('Rohan Iyer', 'Male', '1999-03-26', 'A+', '9005341349', 'rohan.iyer368@mail.com', 'Mumbai, India', '2023-04-26'),
+('Arjun Patel', 'Male', '1981-09-28', 'A+', '9006226530', 'arjun.patel369@mail.com', 'Hyderabad, India', '2022-08-29'),
+('Rahul Sharma', 'Female', '1994-11-04', 'AB-', '9007623909', 'rahul.sharma370@mail.com', 'Mumbai, India', '2024-02-29'),
+('Arjun Pandey', 'Female', '1989-09-17', 'B+', '9008352352', 'arjun.pandey371@mail.com', 'Ahmedabad, India', '2023-08-14'),
+('Rahul Singh', 'Male', '1995-05-10', 'O-', '9002505762', 'rahul.singh372@mail.com', 'Delhi, India', '2025-10-31'),
+('Vihaan Iyer', 'Female', '2004-06-10', 'A-', '9004276255', 'vihaan.iyer373@mail.com', 'Chennai, India', '2023-12-22'),
+('Ishaan Singh', 'Female', '1975-06-30', 'AB+', '9005111474', 'ishaan.singh374@mail.com', 'Ahmedabad, India', '2025-08-25'),
+('Ayaan Chauhan', 'Female', '1991-11-02', 'A-', '9002218214', 'ayaan.chauhan375@mail.com', 'Jaipur, India', '2021-03-24'),
+('Sai Singh', 'Other', '2003-11-29', 'B+', '9009127462', 'sai.singh376@mail.com', 'Jaipur, India', '2023-03-19'),
+('Reyansh Sharma', 'Male', '1998-05-07', 'A+', '9004289272', 'reyansh.sharma377@mail.com', 'Mumbai, India', '2021-05-22'),
+('Arjun Singh', 'Other', '1997-12-11', 'A-', '9002093634', 'arjun.singh378@mail.com', 'Mumbai, India', '2023-05-20'),
+('Rohan Verma', 'Other', '2004-04-02', 'AB-', '9005372230', 'rohan.verma379@mail.com', 'Jaipur, India', '2024-07-28'),
+('Aarav Chauhan', 'Male', '1977-06-07', 'A+', '9004670334', 'aarav.chauhan380@mail.com', 'Jaipur, India', '2023-02-20'),
+('Manan Singh', 'Male', '1977-05-18', 'AB-', '9006687789', 'manan.singh381@mail.com', 'Jaipur, India', '2021-10-02'),
+('Rahul Shah', 'Other', '1989-02-14', 'O-', '9004787409', 'rahul.shah382@mail.com', 'Bangalore, India', '2024-07-08'),
+('Karan Iyer', 'Male', '1995-08-10', 'AB+', '9002017819', 'karan.iyer383@mail.com', 'Chennai, India', '2021-02-26'),
+('Rahul Joshi', 'Male', '1992-04-23', 'AB+', '9003639349', 'rahul.joshi384@mail.com', 'Jaipur, India', '2025-10-08'),
+('Vivaan Pandey', 'Other', '1996-03-16', 'AB+', '9003376089', 'vivaan.pandey385@mail.com', 'Hyderabad, India', '2023-09-01'),
+('Vihaan Pandey', 'Male', '1991-11-26', 'A-', '9006816743', 'vihaan.pandey386@mail.com', 'Jaipur, India', '2024-02-01'),
+('Kabir Iyer', 'Other', '2005-12-29', 'AB-', '9001752215', 'kabir.iyer387@mail.com', 'Bangalore, India', '2023-11-04'),
+('Reyansh Iyer', 'Other', '2001-08-16', 'AB+', '9001619245', 'reyansh.iyer388@mail.com', 'Delhi, India', '2021-08-22'),
+('Dev Rao', 'Other', '1986-08-22', 'O-', '9009495438', 'dev.rao389@mail.com', 'Hyderabad, India', '2022-11-17'),
+('Aditya Trivedi', 'Other', '1987-07-08', 'B+', '9007922379', 'aditya.trivedi390@mail.com', 'Bangalore, India', '2022-05-16'),
+('Sai Singh', 'Female', '1984-12-05', 'B+', '9005661327', 'sai.singh391@mail.com', 'Pune, India', '2022-04-20'),
+('Dev Nair', 'Male', '1981-03-16', 'A-', '9006148461', 'dev.nair392@mail.com', 'Bangalore, India', '2021-04-15'),
+('Ayaan Joshi', 'Other', '1998-07-04', 'AB-', '9009624717', 'ayaan.joshi393@mail.com', 'Chennai, India', '2024-04-19'),
+('Krishna Trivedi', 'Female', '1989-02-07', 'AB+', '9002924984', 'krishna.trivedi394@mail.com', 'Ahmedabad, India', '2022-04-17'),
+('Vivaan Chauhan', 'Male', '2005-04-18', 'A+', '9003468719', 'vivaan.chauhan395@mail.com', 'Chennai, India', '2025-04-02'),
+('Rahul Yadav', 'Other', '2003-03-29', 'AB-', '9001732229', 'rahul.yadav396@mail.com', 'Chennai, India', '2021-09-13'),
+('Manan Chauhan', 'Female', '2003-06-20', 'AB-', '9007179325', 'manan.chauhan397@mail.com', 'Bangalore, India', '2021-05-08'),
+('Vivaan Mehta', 'Male', '1980-01-03', 'O-', '9003793306', 'vivaan.mehta398@mail.com', 'Bangalore, India', '2023-05-30'),
+('Karan Mehta', 'Other', '2003-02-27', 'O+', '9001540097', 'karan.mehta399@mail.com', 'Chennai, India', '2024-07-13'),
+('Krishna Mehta', 'Other', '1986-04-19', 'B+', '9008661796', 'krishna.mehta400@mail.com', 'Delhi, India', '2024-06-10'),
+('Rohan Singh', 'Female', '1986-01-19', 'O-', '9002259200', 'rohan.singh401@mail.com', 'Jaipur, India', '2021-09-22'),
+('Aditya Nair', 'Female', '2000-02-14', 'A-', '9002797945', 'aditya.nair402@mail.com', 'Delhi, India', '2024-11-11'),
+('Arjun Yadav', 'Other', '2005-02-14', 'B+', '9006583213', 'arjun.yadav403@mail.com', 'Delhi, India', '2024-02-10'),
+('Aditya Mehta', 'Female', '1987-06-12', 'O-', '9001243644', 'aditya.mehta404@mail.com', 'Mumbai, India', '2023-11-04'),
+('Ayaan Yadav', 'Female', '1983-12-19', 'AB+', '9003781970', 'ayaan.yadav405@mail.com', 'Pune, India', '2023-10-23'),
+('Ayaan Singh', 'Female', '1993-03-17', 'A+', '9008793644', 'ayaan.singh406@mail.com', 'Mumbai, India', '2023-06-05'),
+('Dev Rao', 'Male', '2000-10-14', 'B+', '9006092293', 'dev.rao407@mail.com', 'Ahmedabad, India', '2024-01-24'),
+('Kabir Nair', 'Other', '1992-02-21', 'A+', '9002354729', 'kabir.nair408@mail.com', 'Hyderabad, India', '2025-01-16'),
+('Karan Yadav', 'Female', '1981-04-26', 'A+', '9001579235', 'karan.yadav409@mail.com', 'Jaipur, India', '2022-02-25'),
+('Vivaan Iyer', 'Male', '1987-08-05', 'B-', '9009623561', 'vivaan.iyer410@mail.com', 'Mumbai, India', '2022-06-06'),
+('Sai Reddy', 'Other', '2002-10-13', 'B-', '9008377951', 'sai.reddy411@mail.com', 'Bangalore, India', '2023-04-10'),
+('Rohan Iyer', 'Other', '1975-04-04', 'O+', '9009319558', 'rohan.iyer412@mail.com', 'Jaipur, India', '2021-10-02'),
+('Rohan Iyer', 'Female', '2001-03-24', 'B-', '9004936806', 'rohan.iyer413@mail.com', 'Jaipur, India', '2024-08-30'),
+('Ishaan Mehta', 'Female', '2003-11-06', 'B+', '9004090542', 'ishaan.mehta414@mail.com', 'Chennai, India', '2024-10-08'),
+('Reyansh Nair', 'Male', '1992-02-08', 'AB+', '9009835265', 'reyansh.nair415@mail.com', 'Ahmedabad, India', '2023-07-06'),
+('Reyansh Singh', 'Other', '1976-12-26', 'AB+', '9004960591', 'reyansh.singh416@mail.com', 'Delhi, India', '2024-11-14'),
+('Reyansh Singh', 'Other', '1991-11-15', 'AB+', '9004092092', 'reyansh.singh417@mail.com', 'Jaipur, India', '2021-04-06'),
+('Sai Nair', 'Other', '2005-09-16', 'AB-', '9009968164', 'sai.nair418@mail.com', 'Delhi, India', '2024-02-26'),
+('Krishna Singh', 'Female', '1977-12-18', 'B-', '9005436433', 'krishna.singh419@mail.com', 'Jaipur, India', '2023-03-07'),
+('Aditya Kapoor', 'Male', '1983-04-14', 'O+', '9003331172', 'aditya.kapoor420@mail.com', 'Pune, India', '2024-10-29'),
+('Kabir Yadav', 'Male', '1975-06-20', 'A-', '9002392619', 'kabir.yadav421@mail.com', 'Bangalore, India', '2024-03-22'),
+('Kabir Chauhan', 'Female', '1989-11-11', 'B-', '9001362468', 'kabir.chauhan422@mail.com', 'Ahmedabad, India', '2021-11-27'),
+('Rahul Singh', 'Male', '1986-08-21', 'A-', '9002575795', 'rahul.singh423@mail.com', 'Mumbai, India', '2022-06-02'),
+('Arjun Verma', 'Female', '1982-10-01', 'AB-', '9008387500', 'arjun.verma424@mail.com', 'Mumbai, India', '2023-06-03'),
+('Aarav Trivedi', 'Female', '2005-04-29', 'O-', '9004253879', 'aarav.trivedi425@mail.com', 'Pune, India', '2021-09-13'),
+('Rahul Chauhan', 'Female', '2004-04-23', 'A+', '9002741779', 'rahul.chauhan426@mail.com', 'Delhi, India', '2024-09-24'),
+('Vivaan Nair', 'Male', '2000-11-21', 'B-', '9009502410', 'vivaan.nair427@mail.com', 'Delhi, India', '2023-07-18'),
+('Krishna Singh', 'Male', '1978-11-14', 'O+', '9006603323', 'krishna.singh428@mail.com', 'Delhi, India', '2024-12-06'),
+('Sai Pandey', 'Male', '1987-04-14', 'B+', '9005835521', 'sai.pandey429@mail.com', 'Jaipur, India', '2025-05-19'),
+('Arjun Rao', 'Female', '1988-05-22', 'A-', '9004271498', 'arjun.rao430@mail.com', 'Delhi, India', '2025-01-14'),
+('Arjun Chauhan', 'Male', '2000-11-26', 'A+', '9002434183', 'arjun.chauhan431@mail.com', 'Ahmedabad, India', '2022-06-20'),
+('Krishna Reddy', 'Female', '1990-09-17', 'A-', '9005757744', 'krishna.reddy432@mail.com', 'Jaipur, India', '2022-11-14'),
+('Rohan Kapoor', 'Other', '1993-10-30', 'AB-', '9008057797', 'rohan.kapoor433@mail.com', 'Jaipur, India', '2024-01-12'),
+('Reyansh Pandey', 'Male', '1978-07-07', 'B+', '9005724882', 'reyansh.pandey434@mail.com', 'Pune, India', '2025-10-29'),
+('Vivaan Rao', 'Other', '1977-04-27', 'B-', '9005362568', 'vivaan.rao435@mail.com', 'Chennai, India', '2024-03-23'),
+('Karan Yadav', 'Female', '1988-02-05', 'O-', '9004236397', 'karan.yadav436@mail.com', 'Bangalore, India', '2022-11-21'),
+('Vivaan Singh', 'Male', '2004-09-23', 'B+', '9001473311', 'vivaan.singh437@mail.com', 'Bangalore, India', '2022-03-18'),
+('Sai Pandey', 'Male', '1991-12-30', 'AB+', '9009680997', 'sai.pandey438@mail.com', 'Mumbai, India', '2024-10-25'),
+('Reyansh Iyer', 'Other', '1991-05-02', 'AB+', '9005844990', 'reyansh.iyer439@mail.com', 'Pune, India', '2024-03-24'),
+('Vihaan Iyer', 'Male', '1996-03-30', 'AB+', '9009438005', 'vihaan.iyer440@mail.com', 'Delhi, India', '2021-11-16'),
+('Dev Mehta', 'Female', '1984-06-16', 'O-', '9001056394', 'dev.mehta441@mail.com', 'Mumbai, India', '2023-12-27'),
+('Rohan Trivedi', 'Female', '1997-05-20', 'O+', '9007403183', 'rohan.trivedi442@mail.com', 'Ahmedabad, India', '2023-05-28'),
+('Dev Mehta', 'Male', '1986-06-14', 'B-', '9005320377', 'dev.mehta443@mail.com', 'Chennai, India', '2022-10-29'),
+('Dev Shah', 'Other', '1998-06-03', 'B-', '9007761917', 'dev.shah444@mail.com', 'Hyderabad, India', '2023-03-29'),
+('Karan Reddy', 'Other', '1999-12-06', 'AB+', '9007518829', 'karan.reddy445@mail.com', 'Chennai, India', '2024-11-13'),
+('Karan Pandey', 'Other', '1997-07-20', 'O+', '9005491844', 'karan.pandey446@mail.com', 'Mumbai, India', '2021-03-15'),
+('Manan Patel', 'Female', '1979-06-02', 'B-', '9003336512', 'manan.patel447@mail.com', 'Hyderabad, India', '2024-01-20'),
+('Aditya Verma', 'Female', '1986-03-20', 'AB+', '9001832922', 'aditya.verma448@mail.com', 'Delhi, India', '2021-08-16'),
+('Aarav Chauhan', 'Other', '1996-02-28', 'A-', '9006510544', 'aarav.chauhan449@mail.com', 'Pune, India', '2025-03-21'),
+('Sai Yadav', 'Male', '1990-06-19', 'A+', '9004494052', 'sai.yadav450@mail.com', 'Ahmedabad, India', '2021-03-16'),
+('Aditya Reddy', 'Other', '1980-07-17', 'B-', '9008585857', 'aditya.reddy451@mail.com', 'Jaipur, India', '2021-03-05'),
+('Sai Iyer', 'Male', '1991-09-11', 'AB-', '9007422324', 'sai.iyer452@mail.com', 'Mumbai, India', '2022-05-17'),
+('Rahul Singh', 'Other', '1993-01-09', 'O-', '9009024915', 'rahul.singh453@mail.com', 'Pune, India', '2025-10-15'),
+('Aarav Joshi', 'Female', '1995-10-13', 'O+', '9007035125', 'aarav.joshi454@mail.com', 'Chennai, India', '2025-03-13'),
+('Krishna Sharma', 'Other', '2002-03-29', 'O+', '9002631975', 'krishna.sharma455@mail.com', 'Hyderabad, India', '2022-08-05'),
+('Karan Trivedi', 'Other', '1994-09-21', 'AB-', '9003966006', 'karan.trivedi456@mail.com', 'Delhi, India', '2025-05-19'),
+('Ayaan Iyer', 'Male', '1988-08-10', 'AB-', '9004330146', 'ayaan.iyer457@mail.com', 'Ahmedabad, India', '2024-11-11'),
+('Manan Shah', 'Male', '2004-12-16', 'A+', '9002429748', 'manan.shah458@mail.com', 'Pune, India', '2025-01-10'),
+('Aditya Iyer', 'Other', '1990-07-18', 'A+', '9004742479', 'aditya.iyer459@mail.com', 'Mumbai, India', '2021-12-14'),
+('Kabir Pandey', 'Female', '1994-07-06', 'AB-', '9004676920', 'kabir.pandey460@mail.com', 'Mumbai, India', '2021-03-10'),
+('Kabir Rao', 'Male', '1992-11-10', 'A-', '9002214826', 'kabir.rao461@mail.com', 'Mumbai, India', '2023-03-24'),
+('Dev Chauhan', 'Other', '2001-05-21', 'A+', '9004315160', 'dev.chauhan462@mail.com', 'Bangalore, India', '2022-02-03'),
+('Aarav Reddy', 'Male', '2001-03-20', 'A-', '9003289548', 'aarav.reddy463@mail.com', 'Mumbai, India', '2021-09-18'),
+('Rohan Iyer', 'Male', '2002-04-26', 'O+', '9002880709', 'rohan.iyer464@mail.com', 'Delhi, India', '2023-12-03'),
+('Aarav Sharma', 'Male', '2005-03-07', 'A-', '9007711618', 'aarav.sharma465@mail.com', 'Ahmedabad, India', '2021-03-20'),
+('Arjun Iyer', 'Male', '1996-06-27', 'AB+', '9004739655', 'arjun.iyer466@mail.com', 'Hyderabad, India', '2024-07-09'),
+('Kabir Mehta', 'Female', '1978-04-04', 'O+', '9008340888', 'kabir.mehta467@mail.com', 'Bangalore, India', '2022-10-13'),
+('Manan Sharma', 'Male', '1983-02-22', 'O-', '9001063795', 'manan.sharma468@mail.com', 'Chennai, India', '2023-09-20'),
+('Krishna Mehta', 'Female', '1982-02-05', 'AB+', '9002276323', 'krishna.mehta469@mail.com', 'Bangalore, India', '2023-06-10'),
+('Vivaan Singh', 'Other', '2001-09-15', 'O-', '9002192007', 'vivaan.singh470@mail.com', 'Delhi, India', '2021-07-22'),
+('Aditya Iyer', 'Female', '1998-04-01', 'AB+', '9005665480', 'aditya.iyer471@mail.com', 'Mumbai, India', '2025-06-04'),
+('Vihaan Kapoor', 'Female', '1977-06-02', 'O-', '9001741109', 'vihaan.kapoor472@mail.com', 'Ahmedabad, India', '2024-06-26'),
+('Ayaan Sharma', 'Male', '1982-03-03', 'O-', '9005963928', 'ayaan.sharma473@mail.com', 'Bangalore, India', '2023-05-12'),
+('Aditya Chauhan', 'Male', '1991-05-16', 'O+', '9004561172', 'aditya.chauhan474@mail.com', 'Jaipur, India', '2025-11-24'),
+('Ayaan Chauhan', 'Other', '1993-10-19', 'O-', '9007475158', 'ayaan.chauhan475@mail.com', 'Bangalore, India', '2021-04-29'),
+('Ishaan Verma', 'Other', '2001-05-28', 'B+', '9007363404', 'ishaan.verma476@mail.com', 'Jaipur, India', '2025-06-05'),
+('Vivaan Reddy', 'Male', '1997-08-14', 'A+', '9007857728', 'vivaan.reddy477@mail.com', 'Delhi, India', '2025-08-13'),
+('Rahul Rao', 'Female', '1984-09-10', 'A+', '9001114706', 'rahul.rao478@mail.com', 'Jaipur, India', '2023-04-09'),
+('Dev Shah', 'Female', '2005-06-21', 'O+', '9008883804', 'dev.shah479@mail.com', 'Chennai, India', '2025-03-27'),
+('Reyansh Chauhan', 'Other', '1977-04-04', 'O+', '9001413835', 'reyansh.chauhan480@mail.com', 'Pune, India', '2025-11-25'),
+('Vivaan Iyer', 'Male', '1977-02-25', 'B+', '9006278281', 'vivaan.iyer481@mail.com', 'Bangalore, India', '2024-08-30'),
+('Sai Sharma', 'Other', '1988-10-28', 'A+', '9006431555', 'sai.sharma482@mail.com', 'Delhi, India', '2023-11-19'),
+('Manan Kapoor', 'Male', '1993-03-05', 'O-', '9007524134', 'manan.kapoor483@mail.com', 'Pune, India', '2021-10-27'),
+('Reyansh Sharma', 'Male', '2001-11-20', 'AB+', '9002259522', 'reyansh.sharma484@mail.com', 'Hyderabad, India', '2025-05-24'),
+('Krishna Sharma', 'Male', '1985-05-10', 'AB-', '9003551153', 'krishna.sharma485@mail.com', 'Chennai, India', '2022-02-14'),
+('Ishaan Kapoor', 'Female', '1995-04-24', 'AB+', '9004700070', 'ishaan.kapoor486@mail.com', 'Jaipur, India', '2021-08-31'),
+('Sai Rao', 'Female', '1998-06-07', 'B-', '9001799926', 'sai.rao487@mail.com', 'Ahmedabad, India', '2021-07-21'),
+('Kabir Pandey', 'Female', '1988-10-21', 'AB+', '9004545500', 'kabir.pandey488@mail.com', 'Hyderabad, India', '2025-06-08'),
+('Vihaan Iyer', 'Male', '1978-05-04', 'AB-', '9008323498', 'vihaan.iyer489@mail.com', 'Hyderabad, India', '2024-06-06'),
+('Aarav Pandey', 'Male', '1993-04-26', 'A+', '9007420750', 'aarav.pandey490@mail.com', 'Jaipur, India', '2023-10-03'),
+('Arjun Iyer', 'Male', '1997-07-12', 'B+', '9004363879', 'arjun.iyer491@mail.com', 'Delhi, India', '2025-01-05'),
+('Ayaan Pandey', 'Other', '2004-08-26', 'A+', '9002451388', 'ayaan.pandey492@mail.com', 'Mumbai, India', '2022-12-21'),
+('Rahul Pandey', 'Female', '1996-11-01', 'O+', '9008544699', 'rahul.pandey493@mail.com', 'Jaipur, India', '2021-12-01'),
+('Ayaan Mehta', 'Male', '2000-02-24', 'A-', '9002473385', 'ayaan.mehta494@mail.com', 'Jaipur, India', '2025-06-26'),
+('Sai Chauhan', 'Male', '1996-07-15', 'B+', '9002472718', 'sai.chauhan495@mail.com', 'Ahmedabad, India', '2021-11-28'),
+('Aarav Pandey', 'Female', '2000-08-08', 'B+', '9003906203', 'aarav.pandey496@mail.com', 'Chennai, India', '2025-10-05'),
+('Ayaan Joshi', 'Male', '1986-05-31', 'O-', '9005303505', 'ayaan.joshi497@mail.com', 'Pune, India', '2022-12-16'),
+('Dev Rao', 'Male', '2002-03-30', 'O+', '9008289238', 'dev.rao498@mail.com', 'Ahmedabad, India', '2021-04-02'),
+('Manan Reddy', 'Male', '1989-06-05', 'O+', '9005385846', 'manan.reddy499@mail.com', 'Pune, India', '2021-04-28'),
+('Vivaan Patel', 'Female', '1981-08-13', 'O+', '9001454041', 'vivaan.patel500@mail.com', 'Delhi, India', '2023-03-31'),
+('Arjun Shah', 'Male', '2001-07-25', 'B+', '9001313985', 'arjun.shah501@mail.com', 'Ahmedabad, India', '2021-01-22'),
+('Karan Yadav', 'Female', '1985-03-27', 'A-', '9008560805', 'karan.yadav502@mail.com', 'Jaipur, India', '2022-10-18'),
+('Manan Trivedi', 'Male', '2000-06-17', 'A+', '9001528803', 'manan.trivedi503@mail.com', 'Delhi, India', '2025-01-03'),
+('Rohan Nair', 'Male', '1978-12-23', 'O+', '9006229587', 'rohan.nair504@mail.com', 'Jaipur, India', '2023-05-31'),
+('Aarav Reddy', 'Female', '2002-02-07', 'AB+', '9001686727', 'aarav.reddy505@mail.com', 'Ahmedabad, India', '2022-04-11'),
+('Krishna Patel', 'Male', '1985-09-11', 'A+', '9008347282', 'krishna.patel506@mail.com', 'Jaipur, India', '2024-04-20'),
+('Aditya Reddy', 'Female', '1983-08-01', 'A-', '9007849360', 'aditya.reddy507@mail.com', 'Ahmedabad, India', '2021-08-01'),
+('Ayaan Rao', 'Other', '1998-02-19', 'AB+', '9006195741', 'ayaan.rao508@mail.com', 'Mumbai, India', '2025-08-15'),
+('Reyansh Sharma', 'Male', '1982-04-09', 'AB-', '9003411893', 'reyansh.sharma509@mail.com', 'Pune, India', '2024-02-06'),
+('Ishaan Shah', 'Female', '1982-11-26', 'A-', '9005244269', 'ishaan.shah510@mail.com', 'Delhi, India', '2023-06-19'),
+('Manan Rao', 'Female', '1988-10-22', 'B+', '9007090983', 'manan.rao511@mail.com', 'Pune, India', '2024-07-04'),
+('Dev Patel', 'Female', '1975-07-11', 'O+', '9008485581', 'dev.patel512@mail.com', 'Hyderabad, India', '2023-11-10'),
+('Sai Mehta', 'Female', '1978-04-10', 'AB+', '9001840666', 'sai.mehta513@mail.com', 'Jaipur, India', '2021-07-04'),
+('Kabir Shah', 'Female', '1997-05-03', 'B-', '9004978768', 'kabir.shah514@mail.com', 'Chennai, India', '2023-04-09'),
+('Vivaan Singh', 'Female', '1990-03-15', 'AB+', '9009566037', 'vivaan.singh515@mail.com', 'Pune, India', '2023-02-19'),
+('Krishna Iyer', 'Other', '1987-06-08', 'O-', '9001963977', 'krishna.iyer516@mail.com', 'Mumbai, India', '2025-02-04'),
+('Kabir Kapoor', 'Female', '2001-02-20', 'O-', '9001314131', 'kabir.kapoor517@mail.com', 'Bangalore, India', '2022-01-06'),
+('Kabir Joshi', 'Other', '2000-07-13', 'O+', '9006367253', 'kabir.joshi518@mail.com', 'Delhi, India', '2025-04-20'),
+('Ayaan Kapoor', 'Female', '1984-03-25', 'A-', '9002956576', 'ayaan.kapoor519@mail.com', 'Ahmedabad, India', '2022-06-28'),
+('Kabir Joshi', 'Male', '1992-06-30', 'B+', '9002961989', 'kabir.joshi520@mail.com', 'Jaipur, India', '2025-03-26'),
+('Aarav Nair', 'Other', '1994-02-22', 'B+', '9006070336', 'aarav.nair521@mail.com', 'Pune, India', '2025-05-29'),
+('Reyansh Sharma', 'Other', '1986-06-20', 'B-', '9006887738', 'reyansh.sharma522@mail.com', 'Mumbai, India', '2025-09-28'),
+('Manan Rao', 'Other', '1977-03-09', 'A+', '9007596863', 'manan.rao523@mail.com', 'Ahmedabad, India', '2025-07-31'),
+('Manan Mehta', 'Male', '1991-04-18', 'AB-', '9008619791', 'manan.mehta524@mail.com', 'Ahmedabad, India', '2023-07-13'),
+('Manan Rao', 'Female', '1992-03-16', 'O-', '9007206625', 'manan.rao525@mail.com', 'Chennai, India', '2024-10-02'),
+('Vihaan Iyer', 'Male', '1979-10-07', 'B+', '9008909554', 'vihaan.iyer526@mail.com', 'Pune, India', '2023-06-04'),
+('Krishna Yadav', 'Male', '1980-03-17', 'AB-', '9003157845', 'krishna.yadav527@mail.com', 'Bangalore, India', '2024-09-22'),
+('Vihaan Verma', 'Female', '2002-07-30', 'A+', '9006758418', 'vihaan.verma528@mail.com', 'Bangalore, India', '2023-03-06'),
+('Rahul Pandey', 'Female', '1991-09-25', 'B-', '9002800638', 'rahul.pandey529@mail.com', 'Hyderabad, India', '2025-02-01'),
+('Arjun Chauhan', 'Male', '1990-10-31', 'AB-', '9001490875', 'arjun.chauhan530@mail.com', 'Mumbai, India', '2024-10-03'),
+('Vivaan Mehta', 'Male', '2004-04-16', 'A-', '9005303289', 'vivaan.mehta531@mail.com', 'Jaipur, India', '2025-09-16'),
+('Rohan Rao', 'Male', '1980-12-29', 'A+', '9004062720', 'rohan.rao532@mail.com', 'Mumbai, India', '2023-10-28'),
+('Ishaan Yadav', 'Other', '1992-02-01', 'A+', '9009713497', 'ishaan.yadav533@mail.com', 'Hyderabad, India', '2022-04-05'),
+('Reyansh Chauhan', 'Male', '1980-03-11', 'A-', '9005007504', 'reyansh.chauhan534@mail.com', 'Hyderabad, India', '2021-04-08'),
+('Aditya Patel', 'Female', '1978-09-30', 'O-', '9007830853', 'aditya.patel535@mail.com', 'Mumbai, India', '2025-02-06'),
+('Aditya Chauhan', 'Other', '1985-09-28', 'AB+', '9007044945', 'aditya.chauhan536@mail.com', 'Ahmedabad, India', '2024-04-11'),
+('Ayaan Pandey', 'Other', '1994-08-07', 'AB-', '9003225624', 'ayaan.pandey537@mail.com', 'Jaipur, India', '2023-03-08'),
+('Karan Shah', 'Other', '1983-10-26', 'A+', '9002457474', 'karan.shah538@mail.com', 'Hyderabad, India', '2024-06-25'),
+('Manan Verma', 'Female', '1999-04-20', 'A-', '9001581336', 'manan.verma539@mail.com', 'Chennai, India', '2023-03-06'),
+('Arjun Chauhan', 'Male', '1990-09-12', 'A-', '9007301258', 'arjun.chauhan540@mail.com', 'Jaipur, India', '2023-07-11'),
+('Vivaan Yadav', 'Female', '1994-07-28', 'AB+', '9004437267', 'vivaan.yadav541@mail.com', 'Ahmedabad, India', '2022-09-04'),
+('Krishna Mehta', 'Other', '1993-04-19', 'A+', '9004168270', 'krishna.mehta542@mail.com', 'Ahmedabad, India', '2025-08-30'),
+('Kabir Verma', 'Other', '1975-05-23', 'AB-', '9002135647', 'kabir.verma543@mail.com', 'Bangalore, India', '2023-06-13'),
+('Ayaan Trivedi', 'Other', '1992-08-04', 'AB+', '9003236178', 'ayaan.trivedi544@mail.com', 'Pune, India', '2021-01-30'),
+('Aarav Shah', 'Other', '1977-04-24', 'AB-', '9001229630', 'aarav.shah545@mail.com', 'Ahmedabad, India', '2024-03-12'),
+('Krishna Mehta', 'Male', '1991-06-26', 'B-', '9003927302', 'krishna.mehta546@mail.com', 'Hyderabad, India', '2021-12-18'),
+('Krishna Sharma', 'Male', '1988-09-12', 'AB+', '9003780774', 'krishna.sharma547@mail.com', 'Jaipur, India', '2022-01-16'),
+('Karan Yadav', 'Male', '2001-07-20', 'O+', '9005708528', 'karan.yadav548@mail.com', 'Bangalore, India', '2022-10-20'),
+('Rohan Pandey', 'Female', '1996-02-23', 'O-', '9008475290', 'rohan.pandey549@mail.com', 'Bangalore, India', '2022-05-04'),
+('Reyansh Pandey', 'Other', '2000-02-15', 'AB+', '9008552310', 'reyansh.pandey550@mail.com', 'Ahmedabad, India', '2024-05-09'),
+('Kabir Kapoor', 'Other', '2000-02-20', 'AB-', '9005892301', 'kabir.kapoor551@mail.com', 'Hyderabad, India', '2024-03-13'),
+('Karan Kapoor', 'Other', '1985-02-08', 'AB+', '9003003435', 'karan.kapoor552@mail.com', 'Hyderabad, India', '2023-06-28'),
+('Vivaan Joshi', 'Other', '1997-02-13', 'AB-', '9007149504', 'vivaan.joshi553@mail.com', 'Mumbai, India', '2022-05-28'),
+('Dev Singh', 'Male', '1986-07-18', 'AB-', '9004124818', 'dev.singh554@mail.com', 'Jaipur, India', '2022-08-07'),
+('Rohan Yadav', 'Other', '2004-03-18', 'B-', '9006447002', 'rohan.yadav555@mail.com', 'Pune, India', '2022-03-06'),
+('Manan Verma', 'Female', '1988-09-05', 'B-', '9004737482', 'manan.verma556@mail.com', 'Ahmedabad, India', '2025-01-14'),
+('Karan Mehta', 'Other', '1975-12-22', 'O-', '9003894069', 'karan.mehta557@mail.com', 'Bangalore, India', '2023-06-02'),
+('Vivaan Rao', 'Female', '1979-03-12', 'AB-', '9002587700', 'vivaan.rao558@mail.com', 'Jaipur, India', '2022-05-05'),
+('Ayaan Iyer', 'Male', '1987-06-15', 'B-', '9007302311', 'ayaan.iyer559@mail.com', 'Jaipur, India', '2023-02-04'),
+('Dev Kapoor', 'Male', '1991-09-03', 'O+', '9003662347', 'dev.kapoor560@mail.com', 'Pune, India', '2021-12-29'),
+('Aarav Patel', 'Male', '1996-04-26', 'A+', '9008148427', 'aarav.patel561@mail.com', 'Mumbai, India', '2022-06-13'),
+('Rohan Joshi', 'Male', '1986-08-05', 'A-', '9007680912', 'rohan.joshi562@mail.com', 'Pune, India', '2024-09-06'),
+('Rohan Iyer', 'Female', '2005-05-18', 'A+', '9003949877', 'rohan.iyer563@mail.com', 'Ahmedabad, India', '2024-03-01'),
+('Aarav Verma', 'Other', '2001-09-19', 'A+', '9002986144', 'aarav.verma564@mail.com', 'Delhi, India', '2025-08-20'),
+('Ishaan Rao', 'Other', '1985-04-27', 'B+', '9006539078', 'ishaan.rao565@mail.com', 'Delhi, India', '2024-12-21'),
+('Manan Rao', 'Other', '1980-04-20', 'O-', '9007034511', 'manan.rao566@mail.com', 'Pune, India', '2021-10-16'),
+('Dev Nair', 'Male', '1989-02-25', 'B-', '9001579511', 'dev.nair567@mail.com', 'Bangalore, India', '2025-01-03'),
+('Kabir Iyer', 'Female', '1984-07-26', 'B+', '9002613150', 'kabir.iyer568@mail.com', 'Pune, India', '2024-05-17');
+
+-- =====================================================
+-- 4. BLOOD DONATION TABLE (30 entries)
+
+-- =====================================================
+INSERT INTO Blood_Donation (Donor_ID, BloodType_ID, Test_ID, Donation_Date, Quantity_ml, Status)
+VALUES
+(1, 1, 1, '2023-03-02', 450, 'Stored'),  -- A+
+(2, 3, 2, '2023-04-13', 500, 'Stored'),  -- B+
+(3, 5, 3, '2023-04-21', 400, 'Discarded'), -- O+ (Malaria)
+(4, 7, 4, '2024-02-10', 480, 'Discarded'), -- AB+ (Hepatitis)
+(5, 4, 5, '2022-06-12', 450, 'Stored'),  -- B-
+(6, 6, 6, '2021-11-20', 470, 'Used'),    -- O-
+(7, 2, 7, '2022-12-26', 460, 'Discarded'), -- A- (HIV)
+(8, 3, 8, '2024-05-31', 490, 'Stored'),  -- B+
+(9, 5, 9, '2023-09-11', 500, 'Discarded'), -- O+ (Hepatitis)
+(10, 8, 10, '2025-01-02', 450, 'Stored'), -- AB-
+(11, 1, 11, '2022-05-03', 450, 'Used'),    -- A+
+(12, 6, 12, '2024-04-20', 490, 'Stored'),  -- O-
+(13, 4, 13, '2023-03-02', 500, 'Discarded'), -- B- (Malaria)
+(14, 7, 14, '2022-10-03', 460, 'Used'),    -- AB+
+(15, 5, 15, '2024-07-09', 450, 'Discarded'), -- O+ (Hepatitis)
+(16, 2, 16, '2023-05-21', 480, 'Stored'),  -- A-
+(17, 1, 17, '2022-09-17', 470, 'Stored'),  -- A+
+(18, 3, 18, '2024-01-07', 450, 'Discarded'), -- B+ (HIV)
+(19, 5, 19, '2023-08-03', 500, 'Used'),    -- O+
+(20, 8, 20, '2024-05-27', 460, 'Stored'),  -- AB-
+(21, 3, 21, '2022-04-12', 490, 'Used'),    -- B+
+(22, 1, 22, '2023-07-03', 450, 'Discarded'), -- A+ (Hepatitis)
+(23, 6, 23, '2024-01-12', 480, 'Stored'),  -- O-
+(24, 4, 24, '2022-12-02', 470, 'Discarded'), -- B- (Malaria)
+(25, 7, 25, '2024-03-07', 450, 'Used'),    -- AB+
+(26, 2, 26, '2023-10-22', 500, 'Discarded'), -- A- (HIV)
+(27, 5, 27, '2022-08-17', 460, 'Used'),    -- O+
+(28, 3, 28, '2024-04-03', 490, 'Stored'),  -- B+
+(29, 1, 29, '2023-06-27', 450, 'Discarded'), -- A+ (Hepatitis)
+(30, 8, 30, '2024-02-17', 480, 'Stored');  -- AB-
+
+-- =====================================================
+-- 5. BLOOD INVENTORY TABLE 
+-- =====================================================
+INSERT INTO Blood_Inventory (Inventory_ID, BloodType_ID, Quantity_Units, Last_Updated)
+VALUES
+(1, 1, 35, '2024-07-15'), -- A+
+(2, 2, 15, '2024-07-15'), -- A-
+(3, 3, 40, '2024-07-15'), -- B+
+(4, 4, 18, '2024-07-15'), -- B-
+(5, 5, 60, '2024-07-15'), -- O+
+(6, 6, 12, '2024-07-15'), -- O- (Critical stock)
+(7, 7, 25, '2024-07-15'), -- AB+
+(8, 8, 9, '2024-07-15');  -- AB-
+
+-- =====================================================
+-- 6. HOSPITAL TABLE 
+-- =====================================================
+INSERT INTO Hospital (Hospital_ID, Hospital_Name, Contact_No, Email, Address)
+VALUES
+(1, 'Apollo Hospital Mumbai', '9876541111', 'apollo@email.com', 'Andheri West, Mumbai'),
+(2, 'Fortis Hospital Bangalore', '9876542222', 'fortis@email.com', 'Bannerghatta Road, Bangalore'),
+(3, 'AIIMS Delhi', '9876543333', 'aiims@email.com', 'Ansari Nagar, Delhi'),
+(4, 'CIMS Hospital Ahmedabad', '9876544444', 'cims@email.com', 'Science City, Ahmedabad'),
+(5, 'Sunshine Hospital Hyderabad', '9876545555', 'sunshine@email.com', 'Somajiguda, Hyderabad'),
+(6, 'Medanta Hospital Gurugram', '9876546666', 'medanta@email.com', 'Sector 38, Gurugram'),
+(7, 'Sterling Hospital Ahmedabad', '9876547777', 'sterling@email.com', 'Drive-in Road, Ahmedabad'),
+(8, 'KEM Hospital Mumbai', '9876548888', 'kem@email.com', 'Parel, Mumbai'),
+(9, 'Amrita Hospital Kochi', '9876549999', 'amrita@email.com', 'Kochi, Kerala'),
+(10, 'Civil Hospital Ahmedabad', '9876550000', 'civil@email.com', 'Asarwa, Ahmedabad'),
+(11, 'Manipal Hospitals Pune', '9001111111', 'manipal.pune@email.com', 'Kharadi, Pune'),
+(12, 'Max Healthcare Saket', '9002222222', 'max.saket@email.com', 'Saket, Delhi'),
+(13, 'Lilavati Hospital', '9003333333', 'lilavati@email.com', 'Bandra West, Mumbai'),
+(14, 'CMC Vellore', '9004444444', 'cmc@email.com', 'Ida Scudder Road, Vellore'),
+(15, 'Yashoda Hospitals Secunderabad', '9005555555', 'yashoda.sec@email.com', 'Secunderabad, Hyderabad'),
+(16, 'Ruby Hall Clinic Pune', '9006666666', 'rubyhall@email.com', 'Bund Garden Road, Pune'),
+(17, 'Ganga Ram Hospital Delhi', '9007777777', 'gangaram@email.com', 'Rajender Nagar, Delhi'),
+(18, 'Sahyadri Hospital Pune', '9008888888', 'sahyadri@email.com', 'Deccan Gymkhana, Pune'),
+(19, 'MIOT International Chennai', '9009999999', 'miot@email.com', 'Manapakkam, Chennai'),
+(20, 'Narayana Health City', '9010000000', 'narayana.bgl@email.com', 'Electronic City, Bangalore'),
+(21, 'Jaslok Hospital Mumbai', '9011111111', 'jaslok@email.com', 'Pedder Road, Mumbai'),
+(22, 'PGIMER Chandigarh', '9012222222', 'pgimer@email.com', 'Sector 12, Chandigarh'),
+(23, 'Apollo Hospitals Chennai', '9013333333', 'apolloc@email.com', 'Greams Road, Chennai'),
+(24, 'Sparsh Hospital Bangalore', '9014444444', 'sparsh@email.com', 'Infantry Road, Bangalore'),
+(25, 'BLK Super Speciality Hospital', '9015555555', 'blk@email.com', 'Pusa Road, Delhi'),
+(26, 'Kokilaben Hospital Mumbai', '9016666666', 'kokilaben@email.com', 'Four Bungalows, Mumbai'),
+(27, 'SIMS Hospital Chennai', '9017777777', 'sims@email.com', 'Vadapalani, Chennai'),
+(28, 'HCG Cancer Centre', '9018888888', 'hcg@email.com', 'Kalinga Rao Road, Bangalore'),
+(29, 'Wockhardt Hospital Nagpur', '9019999999', 'wockhardt.nagpur@email.com', 'North Nagpur, Nagpur'),
+(30, 'Fortis Memorial Gurugram', '9020000000', 'fortismem@email.com', 'Sector 44, Gurugram');
+
+-- =====================================================
+-- 7. BLOOD REQUEST TABLE 
+
+-- =====================================================
+INSERT INTO Blood_Request (Request_ID, Hospital_ID, BloodType_ID, Requested_Units, Request_Date, Status)
+VALUES
+(1, 1, 1, 5, '2023-03-07', 'Pending'),
+(2, 2, 3, 3, '2023-04-15', 'Approved'),
+(3, 3, 5, 10, '2023-04-23', 'Completed'),
+(4, 4, 7, 2, '2024-02-13', 'Completed'),
+(5, 5, 4, 6, '2022-06-15', 'Pending'),
+(6, 6, 6, 4, '2021-11-23', 'Approved'),
+(7, 7, 2, 3, '2022-12-29', 'Completed'),
+(8, 8, 3, 2, '2024-06-03', 'Pending'),
+(9, 9, 5, 7, '2023-09-13', 'Completed'),
+(10, 10, 8, 1, '2025-01-05', 'Approved'),
+(11, 11, 1, 8, '2024-05-10', 'Approved'),
+(12, 12, 5, 5, '2023-11-20', 'Completed'),
+(13, 13, 3, 4, '2022-10-01', 'Pending'),
+(14, 14, 6, 1, '2024-07-01', 'Approved'),
+(15, 15, 7, 3, '2023-02-15', 'Completed'),
+(16, 16, 2, 5, '2022-09-05', 'Approved'),
+(17, 17, 4, 2, '2024-01-20', 'Pending'),
+(18, 18, 5, 6, '2023-08-10', 'Approved'),
+(19, 19, 1, 12, '2022-05-01', 'Completed'),
+(20, 20, 8, 3, '2024-04-10', 'Pending'),
+(21, 21, 3, 7, '2023-03-05', 'Completed'),
+(22, 22, 5, 4, '2024-06-20', 'Pending'),
+(23, 23, 1, 9, '2022-12-10', 'Approved'),
+(24, 24, 6, 2, '2023-07-25', 'Completed'),
+(25, 25, 4, 1, '2024-03-01', 'Pending'),
+(26, 26, 2, 6, '2022-08-20', 'Approved'),
+(27, 27, 8, 3, '2023-10-01', 'Completed'),
+(28, 28, 5, 9, '2024-02-20', 'Approved'),
+(29, 29, 3, 5, '2023-06-01', 'Pending'),
+(30, 30, 7, 4, '2025-01-15', 'Completed');
+
+-- =====================================================
+-- 8. BLOOD DISTRIBUTION TABLE 
+-- =====================================================
+INSERT INTO Blood_Distribution (Distribution_ID, Request_ID, Inventory_ID, Quantity_Distributed, Dispatch_Date, Delivered_To, Status)
+VALUES
+(1, 1, 1, 3, '2023-03-08', 'Apollo Hospital Mumbai', 'Delivered'),
+(2, 2, 3, 2, '2023-04-16', 'Fortis Hospital Bangalore', 'Delivered'),
+(3, 3, 5, 5, '2023-04-24', 'AIIMS Delhi', 'Delivered'),
+(4, 4, 7, 2, '2024-02-14', 'CIMS Hospital Ahmedabad', 'Delivered'),
+(5, 5, 4, 3, '2022-06-16', 'Sunshine Hospital Hyderabad', 'Pending'),
+(6, 6, 6, 4, '2021-11-24', 'Medanta Hospital Gurugram', 'Delivered'),
+(7, 7, 2, 3, '2022-12-30', 'Sterling Hospital Ahmedabad', 'Delivered'),
+(8, 8, 3, 1, '2024-06-04', 'KEM Hospital Mumbai', 'Pending'),
+(9, 9, 5, 7, '2023-09-14', 'Amrita Hospital Kochi', 'Delivered'),
+(10, 10, 8, 1, '2025-01-06', 'Civil Hospital Ahmedabad', 'Delivered'),
+(11, 11, 1, 8, '2024-05-11', 'Manipal Hospitals Pune', 'Delivered'),
+(12, 12, 5, 5, '2023-11-21', 'Max Healthcare Saket', 'Delivered'),
+(13, 13, 3, 4, '2022-10-02', 'Lilavati Hospital', 'Pending'),
+(14, 14, 6, 1, '2024-07-02', 'CMC Vellore', 'Delivered'),
+(15, 15, 7, 3, '2023-02-16', 'Yashoda Hospitals Secunderabad', 'Delivered'),
+(16, 16, 2, 5, '2022-09-06', 'Ruby Hall Clinic Pune', 'Delivered'),
+(17, 17, 4, 1, '2024-01-21', 'Ganga Ram Hospital Delhi', 'Pending'),
+(18, 18, 5, 6, '2023-08-11', 'Sahyadri Hospital Pune', 'Delivered'),
+(19, 19, 1, 12, '2022-05-02', 'MIOT International Chennai', 'Delivered'),
+(20, 20, 8, 3, '2024-04-11', 'Narayana Health City', 'Pending'),
+(21, 21, 3, 7, '2023-03-06', 'Jaslok Hospital Mumbai', 'Delivered'),
+(22, 22, 5, 2, '2024-06-21', 'PGIMER Chandigarh', 'Pending'),
+(23, 23, 1, 9, '2022-12-11', 'Apollo Hospitals Chennai', 'Delivered'),
+(24, 24, 6, 2, '2023-07-26', 'Sparsh Hospital Bangalore', 'Delivered'),
+(25, 25, 4, 1, '2024-03-02', 'BLK Super Speciality Hospital', 'Pending'),
+(26, 26, 2, 6, '2022-08-21', 'Kokilaben Hospital Mumbai', 'Delivered'),
+(27, 27, 8, 3, '2023-10-02', 'SIMS Hospital Chennai', 'Delivered'),
+(28, 28, 5, 9, '2024-02-21', 'HCG Cancer Centre', 'Delivered'),
+(29, 29, 3, 3, '2023-06-02', 'Wockhardt Hospital Nagpur', 'Pending'),
+(30, 30, 7, 4, '2025-01-16', 'Fortis Memorial Gurugram', 'Delivered');
+
+-- =====================================================
+-- 9. STAFF TABLE 
+-- =====================================================
+INSERT INTO Staff (Name, Role, Contact_No, Email, Join_Date, Shift)
+VALUES
+('Rajesh Kumar', 'Lab Technician', '9000000001', 'rajesh.kumar@email.com', '2020-02-01', 'Morning'),
+('Anjali Singh', 'Nurse', '9000000002', 'anjali.singh@email.com', '2021-05-12', 'Evening'),
+('Vikram Chauhan', 'Doctor', '9000000003', 'vikram.chauhan@email.com', '2019-08-19', 'Morning'),
+('Meena Joshi', 'Receptionist', '9000000004', 'meena.joshi@email.com', '2022-03-15', 'Evening'),
+('Deepak Sharma', 'Blood Collector', '9000000005', 'deepak.sharma@email.com', '2023-01-10', 'Night'),
+('Rita Patel', 'Technician', '9000000006', 'rita.patel@email.com', '2022-11-22', 'Morning'),
+('Suresh Nair', 'Driver', '9000000007', 'suresh.nair@email.com', '2020-06-05', 'Night'),
+('Kavita Jain', 'Nurse', '9000000008', 'kavita.jain@email.com', '2021-09-18', 'Evening'),
+('Harish Mehta', 'Doctor', '9000000009', 'harish.mehta@email.com', '2018-07-07', 'Morning'),
+('Pooja Patel', 'Coordinator', '9000000010', 'pooja.patel@email.com', '2023-02-14', 'Morning'),
+('Mohan Varma', 'Phlebotomist', '9000000011', 'mohan.varma@email.com', '2023-05-01', 'Evening'),
+('Shalini Iyer', 'Quality Analyst', '9000000012', 'shalini.iyer@email.com', '2021-11-15', 'Morning'),
+('Arjun Reddy', 'Logistics Manager', '9000000013', 'arjun.reddy@email.com', '2020-04-20', 'Night'),
+('Preeti Das', 'Data Entry Clerk', '9000000014', 'preeti.das@email.com', '2024-01-05', 'Evening'),
+('Sandeep Kaur', 'Counsellor', '9000000015', 'sandeep.kaur@email.com', '2022-07-01', 'Morning'),
+('Nitin Goyal', 'IT Support', '9000000016', 'nitin.goyal@email.com', '2023-09-10', 'Morning'),
+('Lavanya Rao', 'Blood Collector', '9000000017', 'lavanya.rao@email.com', '2021-03-25', 'Night'),
+('Ganesh Soni', 'Lab Technician', '9000000018', 'ganesh.soni@email.com', '2022-10-18', 'Evening'),
+('Chhavi Gupta', 'Nurse', '9000000019', 'chhavi.gupta@email.com', '2024-04-01', 'Morning'),
+('Vijay Menon', 'Doctor', '9000000020', 'vijay.menon@email.com', '2019-01-01', 'Morning'),
+('Sonia Sharma', 'Receptionist', '9000000021', 'sonia.sharma@email.com', '2023-11-01', 'Evening'),
+('Abhinav Singh', 'Driver', '9000000022', 'abhinav.singh@email.com', '2020-12-12', 'Night'),
+('Renu Devi', 'Technician', '9000000023', 'renu.devi@email.com', '2022-05-10', 'Morning'),
+('Akash Malik', 'Phlebotomist', '9000000024', 'akash.malik@email.com', '2024-02-20', 'Evening'),
+('Jaya Varma', 'Coordinator', '9000000025', 'jaya.varma@email.com', '2021-08-08', 'Morning'),
+('Siddharth Das', 'Quality Analyst', '9000000026', 'siddharth.das@email.com', '2023-04-04', 'Night'),
+('Hemant Pawar', 'Logistics Manager', '9000000027', 'hemant.pawar@email.com', '2022-01-25', 'Morning'),
+('Komal Roy', 'Data Entry Clerk', '9000000028', 'komal.roy@email.com', '2024-06-15', 'Evening'),
+('Tarun Saxena', 'Counsellor', '9000000029', 'tarun.saxena@email.com', '2021-07-10', 'Night'),
+('Deepika Rai', 'IT Support', '9000000030', 'deepika.rai@email.com', '2023-03-03', 'Morning');
+
+-- =====================================================
+-- 10. CAMPAIGN TABLE 
+-- =====================================================
+INSERT INTO Campaign (Campaign_ID, Campaign_Name, Location, Date, Organized_By, Collected_Units)
+VALUES
+(1, 'Blood Donation Camp 2021', 'Mumbai', '2021-09-10', 'Apollo Hospital Mumbai', 50),
+(2, 'Life Saver Drive', 'Delhi', '2022-01-15', 'AIIMS Delhi', 60),
+(3, 'Red Drop Event', 'Ahmedabad', '2022-07-20', 'CIMS Hospital Ahmedabad', 45),
+(4, 'Be a Hero', 'Bangalore', '2023-03-25', 'Fortis Hospital Bangalore', 70),
+(5, 'Donate Blood Save Lives', 'Hyderabad', '2023-06-05', 'Sunshine Hospital Hyderabad', 80),
+(6, 'Hope Campaign', 'Gurugram', '2023-09-12', 'Medanta Hospital Gurugram', 55),
+(7, 'Universal Donor Camp', 'Kochi', '2024-02-28', 'Amrita Hospital Kochi', 65),
+(8, 'Blood Connect', 'Ahmedabad', '2024-05-10', 'Sterling Hospital Ahmedabad', 90),
+(9, 'Life Flow', 'Mumbai', '2024-09-05', 'KEM Hospital Mumbai', 75),
+(10, 'Save a Life Drive', 'Delhi', '2025-01-20', 'Max Healthcare Saket', 85),
+(11, 'Mega Blood Drive 2022', 'Pune', '2022-04-01', 'Manipal Hospitals Pune', 10),
+(12, 'Summer Blood Appeal', 'Chennai', '2023-05-18', 'Apollo Hospitals Chennai', 60),
+(13, 'The Gift of Life', 'Kolkata', '2024-07-07', 'Calcutta Medical College', 70),
+(14, 'Monsoon Blood Drive', 'Jaipur', '2022-08-22', 'SMS Hospital Jaipur', 40),
+(15, 'College Blood Camp', 'Vellore', '2023-01-26', 'CMC Vellore', 95),
+(16, 'Corporate Blood Donation Day', 'Gurugram', '2024-03-15', 'Fortis Memorial Gurugram', 110),
+(17, 'Winter Blood Drive', 'Chandigarh', '2021-12-10', 'PGIMER Chandigarh', 50),
+(18, 'B+ Campaign', 'Patna', '2023-07-14', 'Patna Medical College', 65),
+(19, 'O Negative Focus', 'Bangalore', '2024-04-05', 'Narayana Health City', 35),
+(20, 'Community Blood Donation', 'Lucknow', '2022-11-03', 'King George Medical University', 75),
+(21, 'Youth Blood Pledge', 'Mumbai', '2023-10-10', 'Lilavati Hospital', 80),
+(22, 'Coastal Blood Drive', 'Kochi', '2024-06-25', 'Lourdes Hospital Kochi', 55),
+(23, 'Rare Blood Group Initiative', 'Delhi', '2022-06-19', 'Ganga Ram Hospital Delhi', 20),
+(24, 'The Universal Call', 'Hyderabad', '2023-04-08', 'Yashoda Hospitals Secunderabad', 90),
+(25, 'Festival of Giving', 'Ahmedabad', '2024-01-01', 'Civil Hospital Ahmedabad', 60),
+(26, 'Back to College Drive', 'Bangalore', '2022-09-15', 'Sparsh Hospital Bangalore', 70),
+(27, 'Saving Smiles', 'Chennai', '2023-08-29', 'SIMS Hospital Chennai', 50),
+(28, 'Rural Outreach Camp', 'Mumbai', '2024-02-14', 'Jaslok Hospital Mumbai', 45),
+(29, 'Emergency Reserve Drive', 'Nagpur', '2023-12-05', 'Wockhardt Hospital Nagpur', 120),
+(30, 'New Year, New Life', 'Pune', '2025-02-05', 'Sahyadri Hospital Pune', 85);
+
+
+-- ======================================================================
+-- UNIQUE FEATURES
+-- ======================================================================
+USE blood_donation;
+-- ======================================================================
+-- 1.Monthly Donation Summary Report
+-- Feature: Generate reports showing total donations and units per month.
+-- ======================================================================
+CREATE VIEW Monthly_Donation_Report AS
+SELECT 
+    DATE_FORMAT(Donation_Date, '%Y-%m') AS Month,
+    COUNT(Donation_ID) AS Total_Donations,
+    SUM(Quantity_ml) AS Total_Quantity_ml
+FROM Blood_Donation
+GROUP BY DATE_FORMAT(Donation_Date, '%Y-%m')
+ORDER BY Month DESC;
+SELECT * FROM Monthly_Donation_Report;
+
+
+-- ==================================================================================
+-- 2.Campaign Performance Tracker
+-- Feature: Track how much each campaign contributed to the total blood collected.
+-- ==================================================================================
+
+CREATE VIEW Campaign_Performance AS
+SELECT 
+    Campaign_Name,
+    Location,
+    Organized_By,
+    Date AS Campaign_Date,
+    Collected_Units,
+    CASE
+        WHEN Collected_Units >= 80 THEN 'Excellent'
+        WHEN Collected_Units BETWEEN 60 AND 79 THEN 'Good'
+        WHEN Collected_Units BETWEEN 40 AND 59 THEN 'Average'
+        ELSE 'Low'
+    END AS Performance_Rating
+FROM Campaign
+ORDER BY Collected_Units asc;
+SELECT * FROM Campaign_Performance;
+
+-- ================================================================
+-- 3. Safe Blood Availability Report
+-- Feature: Identify all safe, stored blood units by blood type
+-- ================================================================
+CREATE VIEW Safe_Blood_Availability AS
+SELECT 
+    bd.Donation_ID,
+    d.Name AS Donor_Name,
+    bt.BloodGroup,
+    bd.Quantity_ml,
+    bd.Status,
+    bt.RH_Factor,
+    bd.Donation_Date
+FROM Blood_Donation bd
+JOIN Donor d ON bd.Donor_ID = d.Donor_ID
+JOIN Blood_Type bt ON bd.BloodType_ID = bt.BloodType_ID
+JOIN Blood_Test t ON bd.Test_ID = t.Test_ID
+WHERE t.Result = 'Safe' AND bd.Status = 'Stored'
+ORDER BY bd.Donation_Date DESC
+LIMIT 10;
+
+SELECT * FROM Safe_Blood_Availability;
+
+
+-- ================================================================
+-- 4. Blood Type Stock Overview
+-- Feature: Display inventory levels and alert for low stock
+-- ================================================================
+CREATE VIEW Blood_Stock_Overview AS
+SELECT 
+    bt.BloodGroup,
+    bt.RH_Factor,
+    bi.Quantity_Units,
+    CASE
+        WHEN bi.Quantity_Units < 10 THEN 'Critical Low'
+        WHEN bi.Quantity_Units BETWEEN 10 AND 20 THEN 'Low'
+        ELSE 'Sufficient'
+    END AS Stock_Status,
+    bi.Last_Updated
+FROM Blood_Inventory bi
+JOIN Blood_Type bt ON bi.BloodType_ID = bt.BloodType_ID
+ORDER BY bi.Quantity_Units ASC
+LIMIT 10;
+
+SELECT * FROM Blood_Stock_Overview;
+
+
+
+-- ================================================================
+-- 5. Hospital Request Summary
+-- Feature: Track total, approved, and completed requests per hospital
+-- ================================================================
+CREATE VIEW Hospital_Request_Summary AS
+SELECT 
+    h.Hospital_Name,
+    COUNT(r.Request_ID) AS Total_Requests,
+    SUM(CASE WHEN r.Status = 'Approved' THEN 1 ELSE 0 END) AS Approved_Requests,
+    SUM(CASE WHEN r.Status = 'Completed' THEN 1 ELSE 0 END) AS Completed_Requests,
+    SUM(r.Requested_Units) AS Total_Units_Requested
+FROM Hospital h
+JOIN Blood_Request r ON h.Hospital_ID = r.Hospital_ID
+GROUP BY h.Hospital_Name
+ORDER BY Total_Requests DESC
+LIMIT 10;
+
+SELECT * FROM Hospital_Request_Summary;
+
+
+
+-- ================================================================
+-- 6. Staff Shift Summary by Role
+-- Feature: Show how many staff members work in each role and shift
+-- ================================================================
+CREATE VIEW Staff_Shift_Summary AS
+SELECT 
+    Role,
+    Shift,
+    COUNT(*) AS Total_Staff
+FROM Staff
+GROUP BY Role, Shift
+ORDER BY Role, Shift;
+
+SELECT * FROM Staff_Shift_Summary;
