@@ -1,4 +1,4 @@
-# 🩸 Blood Bank Management System (BBMS)
+# 🩸 Blood Bank Management System (DBMS)
 
 A **full-stack web application** that manages the records of blood donors, hospitals, donations, and blood distribution in an organized and efficient way.  
 Built using **React (Frontend)**, **Node.js + Express (Backend)**, and **MySQL (Database)**, this project serves as a complete **Blood Bank Management Dashboard** for admins and healthcare staff.
